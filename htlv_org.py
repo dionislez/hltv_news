@@ -1,9 +1,8 @@
-import asyncio
+from pprint import pprint
 
 import aiohttp
 from bs4 import BeautifulSoup
 from loguru import logger
-from pprint import pprint
 
 
 HTLV_LINKS = {
@@ -59,7 +58,7 @@ async def hltv_actual_news():
     return result_dict
 
 
-async def history_news(year: str, month: str):
+async def hltv_history_news(year: str, month: str):
     link = HTLV_LINKS['history_news'].format(year=year, month=HLTV_MONTH[month])
     html = await hltv_get_html(link)
     all_news = html.find_all(class_='standard-box standard-list')
@@ -82,7 +81,3 @@ async def history_news(year: str, month: str):
         )
 
     return result_dict
-
-
-if __name__ == '__main__':
-    asyncio.run(history_news(2022, '01'))
