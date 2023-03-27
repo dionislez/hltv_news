@@ -19,5 +19,5 @@ from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('news/', news_page)
+    path('news/', news_page, name='actual_news')
 ]

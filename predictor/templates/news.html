@@ -20,8 +20,33 @@
             text-align: center;
         }
 
+        .button-container {
+            display: flex;
+            margin: 0 auto;
+            padding: 20px 0px 0px;
+        }
+
+        .button-container .button {
+            border-radius: 8%;
+            flex-grow: 1;
+            margin: 0 20px;
+            background-color: #282828;
+            border: 3px solid rgb(113, 0, 128);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            float: right;
+            transition: transform 0.2s;
+        }
+
+        .button-container .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(113, 0, 128);
+        }
+
         h1 {
-            font: 36px sans-serif;
+            font: 44px sans-serif;
             margin: 0;
             text-transform: uppercase;
         }
@@ -56,16 +81,18 @@
         }
 
         .post .button {
-            background-color: #282828; /* Green background */
-            border: 1px solid rgb(113, 0, 128); /* Green border */
+            transition: transform 0.2s;
+            background-color: #282828;
+            border: 2px solid rgb(113, 0, 128);
             font: 12pt monospace;
             text-decoration: none;
-            color: #FFFFFF; /* White text */
-            padding: 4px 10px; /* Some padding */
+            color: #FFFFFF;
+            padding: 4px 10px;
             float: right;
         }
 
         .post .button:hover {
+            transform: translateY(-2px);
             background-color: rgb(113, 0, 128);
         }
 
@@ -83,12 +110,18 @@
 <body>
     <header>
         <h1>CS:GO NEWS</h1>
+        <div class="button-container" style="max-width: 983px;">
+            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+        </div>
     </header>
     <div class="container">
         {% for item in items %}
         <div class="post">
             <h2>{{ item.title }}</h2>
-            <a href="{{ item.source_link }}", class="button">HLTV</a>
+            <a href="{{ item.source_link }}" class="button">HLTV</a>
             <p class="time">{{ item.time }}</p>
         </div>
         {% endfor %}
