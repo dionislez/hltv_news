@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CS:GO NEWS</title>
+    <style>
+        body {
+            background-color: #1E1E1E;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font: 36px sans-serif;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .post {
+            background-color: #282828;
+            border-radius: 5px;
+            font: 12pt monospace;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .post h2 {
+            font-size: 24px;
+            margin: 20px;
+            text-transform: uppercase;
+        }
+
+        .post .time {
+            margin: 20px;
+            font: 12pt monospace;
+            border: 1px solid rgb(113, 0, 128);
+            width: fit-content;
+            padding: 1px 3px 1px 3px;
+        }
+
+        .post .button {
+            background-color: #282828; /* Green background */
+            border: 1px solid rgb(113, 0, 128); /* Green border */
+            font: 12pt monospace;
+            text-decoration: none;
+            color: #FFFFFF; /* White text */
+            padding: 4px 10px; /* Some padding */
+            float: right;
+        }
+
+        .post .button:hover {
+            background-color: rgb(113, 0, 128);
+        }
+
+        footer {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CS:GO NEWS</h1>
+    </header>
+    <div class="container">
+        {% for item in items %}
+        <div class="post">
+            <h2>{{ item.title }}</h2>
+            <a href="{{ item.source_link }}", class="button">HLTV</a>
+            <p class="time">{{ item.time }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    <footer>
+        <p>{{ date }}
