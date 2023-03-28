@@ -4,9 +4,16 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from utils import get_news
 
+NAMES = {
+    "actual_news": "Today's news",
+    "yesterday_news": "Yesterday's news",
+    "previous_news": "Previous news"
+}
 
-def news_page(request: HttpRequest) -> HttpResponse:
-    current_time = datetime.utcnow()
-    today_news = get_news("Today's news")
-    context = {'date': current_time.date, 'items': today_news}
+
+def news_page_actual(request: HttpRequest) -> HttpResponse:
+    context = {
+        'date': datetime.utcnow().date,
+        'items': get_news(NAMES[request.resolver_match.url_name])
+    }
     return render(request, 'news.html', context)
