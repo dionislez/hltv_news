@@ -23,8 +23,8 @@ async def htlv_actual_news_update(result: dict):
                     {'$set': {
                         'title': data['title'],
                         'time': data['time'],
+                        'title_time': data['title_time'],
                         'current_time': current_time,
-                        'source_link': data['source_link'],
                         'type': item
                     }},
                     upsert=True,

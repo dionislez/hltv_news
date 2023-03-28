@@ -1,5 +1,6 @@
 import asyncio
-from datetime import datetime
+from copy import deepcopy
+from datetime import datetime, timedelta
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -9,7 +10,6 @@ from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
 
 from database import htlv_all_players_update
-
 
 HTLV_LINKS = {'actual_news': 'https://www.hltv.org',
               'history_news': 'https://www.hltv.org/news/archive/{year}/{month}',
@@ -55,7 +55,6 @@ async def hltv_get_html(link: str):
                 driver.close()
                 driver.quit()
 
-
 async def hltv_actual_news():
     html = await hltv_get_html(HTLV_LINKS['actual_news'])
     if not html:
@@ -63,6 +62,7 @@ async def hltv_actual_news():
 
     category_news = html.find_all(class_='standard-box standard-list')
     type_news = html.find_all('h2')[:3]
+    utcnow = datetime.utcnow()
 
     result_dict = dict()
     for index, category in enumerate(category_news):
@@ -70,15 +70,28 @@ async def hltv_actual_news():
         result_dict[type_news[index].text] = list()
         for item in news:
             data = item.text.strip().replace('\n\n', '\n').split('\n')
+            time_ago = utcnow - timedelta(hours=await title_ago(data[1]))
             result_dict[type_news[index].text].append(
                 {
                     'title': data[0].replace("'", '`'),
                     'time': data[1],
+                    'title_time': time_ago,
                     'source_link': HTLV_LINKS['actual_news'] + item['href']
                 }
             )
     return result_dict
 
+async def title_ago(time: str) -> str:
+    title_time = time.split(' ')
+    if 'day' in title_time[1]:
+        if 'a' == title_time[0]:
+            ago = 24
+        else:
+            ago = int(title_time[0]) * 24
+        return ago
+    if 'an' == title_time[0]:
+        return 1
+    return int(title_time[0])
 
 async def hltv_history_news(year: str, month: str):
     link = HTLV_LINKS['history_news'].format(year=year, month=HLTV_MONTH[month])
@@ -105,7 +118,6 @@ async def hltv_history_news(year: str, month: str):
         )
     return result_dict
 
-
 async def hltv_stats_teams(current_time: datetime):
     team_fields = ['team', 'maps', 'kd_diff', 'kd', 'rating', 'team_id', 'location'] 
     html = await hltv_get_html(HTLV_LINKS['stats_teams'].format(year=current_time.year))
@@ -123,7 +135,6 @@ async def hltv_stats_teams(current_time: datetime):
         team_data['current_time'] = str(current_time)
         await htlv_all_players_update(team_data)
         logger.info(f'{team_data["team_id"]}: {team_data["team"]}')
-
 
 async def hltv_stats_by_team(team_data: dict, year: int):
     html = await hltv_get_html(
@@ -159,7 +170,6 @@ async def hltv_stats_by_team(team_data: dict, year: int):
         teammate_info.append(teammate.find('a')['href'].split('/')[3])
         team_data['teammates'][teammate_info[-1]] = {'nikname': teammate_info[0],
                                                      'maps': int(teammate_info[-2].split(' ')[0])}
-
 
 if __name__ == '__main__':
     asyncio.run(hltv_stats_teams(datetime.utcnow()))
