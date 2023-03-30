@@ -8,4 +8,5 @@ urlpatterns = [
     path('news/today', news_page_actual, name='actual_news'),
     path('news/yesterday', news_page_actual, name='yesterday_news'),
     path('news/previous', news_page_actual, name='previous_news'),
+    path('news/archive', news_page_actual, name='archive_news')
 ]

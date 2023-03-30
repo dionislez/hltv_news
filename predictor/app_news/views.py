@@ -2,18 +2,43 @@ from datetime import datetime
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
-from utils import get_news
+from utils import get_news, get_news_archive
+
+from forms import DateForm
 
 NAMES = {
     "actual_news": "Today's news",
     "yesterday_news": "Yesterday's news",
-    "previous_news": "Previous news"
+    "previous_news": "Previous news",
+    "archive_news": "Yesterday's news"
 }
 
 
 def news_page_actual(request: HttpRequest) -> HttpResponse:
+    form = DateForm()
+    current_date = datetime.utcnow()
+    url_name = request.resolver_match.url_name
     context = {
-        'date': datetime.utcnow().date,
-        'items': get_news(NAMES[request.resolver_match.url_name])
+        'date': current_date.date,
+        'items': [
+            {'title': 'News were not found',
+             'source_link': 'https://www.hltv.org/',
+             'time': str(current_date.strftime('%Y-%m-%d'))}
+        ],
+        'time': str(current_date.strftime('%Y-%m-%d')),
+        'form': form
     }
+
+    if request.method == 'POST':
+        form = DateForm(request.POST)
+        if form.is_valid():
+            context['time'] = str(form.cleaned_data['date'])
+            archive = get_news_archive(form.cleaned_data['date'])
+            context['items'] = archive if archive else context['items']
+
+    if url_name == 'archive_news':
+        return render(request, 'news_archive.html', context)
+
+    news = get_news(NAMES[url_name])
+    context['items'] = news if news else context['items']
     return render(request, 'news.html', context)

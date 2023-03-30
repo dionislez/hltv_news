@@ -14,3 +14,11 @@ def get_news(type: str) -> Optional[list]:
     if not all_news:
         return
     return all_news
+
+def get_news_archive(date: str) -> Optional[list]:
+    all_news = connect('history_news').find_one(
+        {f'data.{date}': {'$exists': True}},
+        {'_id': 0})
+    if not all_news:
+        return
+    return all_news['data'][str(date)]

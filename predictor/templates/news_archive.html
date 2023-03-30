@@ -136,6 +136,29 @@
         footer p {
             margin: 0;
         }
+
+        form {
+            max-height: 100px;
+        }
+
+        form, button {
+            border-radius: 5px;
+            background-color: rgb(113, 0, 128);
+            border: 2px solid rgb(113, 0, 128);
+            color: #FFFFFF;
+            font: 14pt monospace;
+            float: center;
+            text-align: center;
+            line-height: 1;
+            padding-bottom: 2px;
+            margin-top: 1px;
+            transition: transform 0.2s;
+        }
+
+        form, button:hover {
+            transform: translateY(-2px);
+            background-color: #333333;
+        }
     </style>
 </head>
 <body>
@@ -155,11 +178,16 @@
         <a href="{% url 'archive_news' %}" class="button">ARCHIVE</a>
     </div>
     <div class="container">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Submit</button>
+        </form>
         {% for item in items %}
         <div class="post">
             <h2>{{ item.title }}</h2>
             <a href="{{ item.source_link }}" class="button">HLTV</a>
-            <p class="time">{{ item.time }}</p>
+            <p class="time">{{ time }}</p>
         </div>
         {% endfor %}
     </div>
