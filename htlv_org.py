@@ -20,7 +20,8 @@ HTLV_LINKS = {'actual_news': 'https://www.hltv.org',
                              '/natus-vincere?startDate={year}-01-01'
                              '&endDate={year}-12-31'),
               'matches_team': ('https://www.hltv.org/stats/teams/'
-                               'matches/{team_id}/{team_name}?startDate=all')}
+                               'matches/{team_id}/{team_name}?startDate=all'),
+              'stats_maps': 'https://www.hltv.org/stats/teams/maps/{team_id}/order'}
 HLTV_MONTH = {'01': 'january', '02': 'february', '03': 'march', '04': 'april',
               '05': 'may', '06': 'june', '07': 'july', '08': 'august',
               '09': 'september', '10': 'october', '11': 'november', '12': 'december'}
@@ -29,6 +30,11 @@ DRIVER_OPTIONS = ['--log-level=1', 'headless', ('user-agent=Mozilla/5.0 '
                                                 ' AppleWebKit/537.36 (KHTML, '
                                                 'like Gecko) Chrome/111.0.0.0'
                                                 ' Safari/537.36')]
+HEADERS = {
+    'referer': 'https://www.hltv.org/stats',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+}
+COOKIES = {'hltvTimeZone': 'Europe/Copenhagen'}
 
 
 async def hltv_get_html(link: str):
@@ -37,23 +43,45 @@ async def hltv_get_html(link: str):
             if response.status < 400:
                 html = await response.text()
                 return BeautifulSoup(html, 'lxml')
+        if response.status == 403:
+            link_params = await params_formatter(link)
+            async with session.get(
+                url=link_params[0],
+                headers=HEADERS,
+                cookies=COOKIES,
+                params=link_params[1]
+            ) as response:
+                if response.status < 400:
+                    html = await response.text()
+                    return BeautifulSoup(html, 'lxml')
+        try:
+            service = Service(executable_path='chromedriver\chromedriver.exe')
+            options = webdriver.ChromeOptions()
+            options.add_experimental_option('excludeSwitches', ['enable-logging'])
+            for driver_option in DRIVER_OPTIONS:
+                options.add_argument(driver_option)
+            driver = webdriver.Chrome(service=service, options=options)
+            driver.get(link)
+            html = driver.page_source
+            return BeautifulSoup(html, 'lxml')
+        except Exception as error:
+            logger.error(error)
+            return
+        finally:
+            driver.close()
+            driver.quit()
 
-            try:
-                service = Service(executable_path='chromedriver\chromedriver.exe')
-                options = webdriver.ChromeOptions()
-                options.add_experimental_option('excludeSwitches', ['enable-logging'])
-                for driver_option in DRIVER_OPTIONS:
-                    options.add_argument(driver_option)
-                driver = webdriver.Chrome(service=service, options=options)
-                driver.get(link)
-                html = driver.page_source
-                return BeautifulSoup(html, 'lxml')
-            except Exception as error:
-                logger.error(error)
-                return
-            finally:
-                driver.close()
-                driver.quit()
+async def params_formatter(link: str):
+    check_link = link.split('?')
+    if len(check_link) == 1:
+        return link, None
+
+    params_dict = {}
+    params = check_link[1].split('&')
+    for param in params:
+        key_value = param.split('=')
+        params_dict[key_value[0]] = key_value[1]
+    return check_link[0], params_dict
 
 async def hltv_actual_news():
     html = await hltv_get_html(HTLV_LINKS['actual_news'])
@@ -131,7 +159,8 @@ async def hltv_stats_teams(current_time: datetime):
         team_data.append(team.find('img')['title'])
         team_data = dict(zip(team_fields, team_data))
         await hltv_stats_by_team(team_data, current_time.year)
-        await asyncio.sleep(5)
+        await asyncio.sleep(1)
+        team_data['maps_stats'] = await hltv_stats_maps(team_data["team_id"])
         team_data['current_time'] = str(current_time)
         await htlv_all_players_update(team_data)
         logger.info(f'{team_data["team_id"]}: {team_data["team"]}')
@@ -171,5 +200,47 @@ async def hltv_stats_by_team(team_data: dict, year: int):
         team_data['teammates'][teammate_info[-1]] = {'nikname': teammate_info[0],
                                                      'maps': int(teammate_info[-2].split(' ')[0])}
 
-if __name__ == '__main__':
-    asyncio.run(hltv_stats_teams(datetime.utcnow()))
+async def hltv_stats_maps(team_id: str):
+    html = await hltv_get_html(HTLV_LINKS['stats_maps'].format(team_id=team_id))
+    if not html:
+        return {}
+
+    maps = html.find(class_='two-grid').find_all(class_='col')
+    replace_ = {
+        0: 'Wins / draws / losses',
+        1: 'Win rate',
+        2: 'Total rounds',
+        3: 'Round win-% after getting first kill',
+        4: 'Round win-% after receiving first death'
+    }
+    result = {}
+    for map in maps:
+        name = map.find(class_='map-pool-map-name')
+        if not name:
+            continue
+        name = name.text.strip()
+
+        stats = map.find_all(class_='stats-row')
+        stats_dict = {}
+        for index, stat in enumerate(stats):
+            value = stat.text.strip().replace(replace_[index], '')
+            if index == 0:
+                value = value.split(' / ')
+                value = [int(i) for i in value]
+            if index == 2:
+                value = float(value)
+            elif index == 3:
+                key = 'perc_first_k'
+                value = float(value.replace('%', ''))
+            elif index == 4:
+                key = 'perc_first_d'
+                value = float(value.replace('%', ''))
+            else:
+                key = replace_[index].lower().replace(' / ', '_').replace(' ', '_')
+            stats_dict[key] = value
+        result[name] = stats_dict
+    return result
+
+# if __name__ == '__main__':
+    # asyncio.run(hltv_stats_teams(datetime.utcnow()))
+    # print(asyncio.run(hltv_stats_maps('8668')))

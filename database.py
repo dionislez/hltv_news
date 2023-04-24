@@ -34,7 +34,6 @@ async def htlv_actual_news_update(result: dict):
                                             {},
                                             session=session)
 
-
 async def hltv_all_news_update(result: dict, year: str, month: str):
     date = f'{year}-{month}'
     if not result[date]:
@@ -47,8 +46,14 @@ async def hltv_all_news_update(result: dict, year: str, month: str):
             session=session
         )
 
-
 async def htlv_all_players_update(team_data: dict):
+    team_data['maps'] = int(team_data['maps'])
+    team_data['kd_diff'] = int(team_data['kd_diff'])
+    team_data['kd'] = float(team_data['kd'])
+    team_data['rating'] = float(team_data['rating'])
+    team_data['total_kills'] = int(team_data['total_kills'])
+    team_data['total_deaths'] = int(team_data['total_deaths'])
+    team_data['rounds_played'] = int(team_data['rounds_played'])
     async with await client.start_session() as session:
         await db['all_teams'].find_one_and_update(
             {'team_id': team_data['team_id']},
@@ -56,7 +61,6 @@ async def htlv_all_players_update(team_data: dict):
             upsert=True,
             session=session
         )
-
 
 async def htlv_all_players_delete(current_time: str):
     async with await client.start_session() as session:
