@@ -5,7 +5,7 @@ from datetime import datetime
 from loguru import logger
 
 from database import hltv_all_news_update
-from htlv_org import hltv_history_news
+from hltv_org import hltv_history_news
 
 
 async def hltv_all_news_parsing():

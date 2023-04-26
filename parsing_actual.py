@@ -3,7 +3,7 @@ import asyncio
 from loguru import logger
 
 from database import htlv_actual_news_update
-from htlv_org import hltv_actual_news
+from hltv_org import hltv_actual_news
 
 
 async def hltv_actual_news_parsing():

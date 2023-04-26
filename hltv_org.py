@@ -1,6 +1,7 @@
 import asyncio
-from copy import deepcopy
+import json
 from datetime import datetime, timedelta
+from pprint import pprint
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -10,6 +11,8 @@ from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
 
 from database import htlv_all_players_update
+from formetters.players_format import (html_individual_check,
+                                       html_overview_check)
 
 HTLV_LINKS = {'actual_news': 'https://www.hltv.org',
               'history_news': 'https://www.hltv.org/news/archive/{year}/{month}',
@@ -241,6 +244,25 @@ async def hltv_stats_maps(team_id: str):
         result[name] = stats_dict
     return result
 
-# if __name__ == '__main__':
+async def hltv_stats_player(player_id: str, player_nick: str):
+    html_overview = await hltv_get_html(f'https://www.hltv.org/stats/players/{player_id}/{player_nick}')
+    html_individual = await hltv_get_html(f'https://www.hltv.org/stats/players/individual/{player_id}/{player_nick}')
+    rating_data = json.loads(html_overview.find(class_='graph')['data-fusionchart-config'])['dataSource']
+    overview_stats = html_overview.find_all(class_='stats-row')
+    individual_stats = html_individual.find_all(class_='stats-row')
+    overview_ = {}
+    for index, stat in enumerate(overview_stats):
+        format_stat = stat.text.strip()
+        await html_overview_check(index, format_stat, overview_)
+
+    for index, stat in enumerate(individual_stats):
+        format_stat = stat.text.strip()
+        await html_individual_check(index, format_stat, overview_)
+
+    # print(overview_)
+    # pprint(rating_data)
+
+if __name__ == '__main__':
     # asyncio.run(hltv_stats_teams(datetime.utcnow()))
     # print(asyncio.run(hltv_stats_maps('8668')))
+    asyncio.run(hltv_stats_player('7998', 's1mple'))

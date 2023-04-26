@@ -4,7 +4,7 @@ from datetime import datetime
 from loguru import logger
 
 from database import htlv_all_players_delete
-from htlv_org import hltv_stats_teams
+from hltv_org import hltv_stats_teams
 
 
 async def parsing_teams():
