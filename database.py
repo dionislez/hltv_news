@@ -11,6 +11,8 @@ db = client['HLTV']
 db['actual_news'].create_index([('source_link', 1)], unique=True)
 db['history_news'].create_index([('date', 1)], unique=True)
 db['all_teams'].create_index([('team_id', 1)], unique=True)
+db['all_players'].create_index([('player_id', 1)], unique=True)
+db['overview_data'].create_index([('player_id', 1)], unique=True)
 
 
 async def htlv_actual_news_update(result: dict):
@@ -70,3 +72,27 @@ async def htlv_all_players_delete(current_time: str):
             session=session
         )
     return items.deleted_count
+
+async def hltv_get_teammates():
+    async with await client.start_session() as session:
+        teammates = await db['all_teams'].find(
+            {'teammates': {'$ne': {}}},
+            projection={'_id': 0, 'teammates': 1},
+            session=session
+        ).to_list(length=None)
+    return teammates
+
+async def hltv_players_update(overview: dict, graph_data: dict):
+    async with await client.start_session() as session:
+        await db['all_players'].find_one_and_update(
+            {'player_id': overview['player_id']},
+            {'$set': overview},
+            upsert=True,
+            session=session
+        )
+        await db['overview_data'].find_one_and_update(
+            {'player_id': graph_data['player_id']},
+            {'$set': graph_data},
+            upsert=True,
+            session=session
+        )

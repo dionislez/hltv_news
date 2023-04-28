@@ -102,3 +102,14 @@ async def html_individual_check(index: int, format_stat: str, overview_: dict):
         case 23:
             format_stat = format_stat.replace('Other', '')
             overview_['other_k'] = int(format_stat)
+
+async def hltv_career_check(index: int, format_stat: str, overview_: dict):
+    match index:
+        case 0:
+            overview_['all'] = 0 if format_stat == '-' else float(format_stat)
+        case 1:
+            overview_['online'] = 0 if format_stat == '-' else float(format_stat)
+        case 2:
+            overview_['lan'] = 0 if format_stat == '-' else float(format_stat)
+        case 3:
+            overview_['major'] = 0 if format_stat == '-' else float(format_stat)
