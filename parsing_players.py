@@ -19,7 +19,7 @@ async def parsing_teammates():
             logger.info(f"{player_id}")
             player_stats = await hltv_stats_player(
                 player_id,
-                group['teammates'][player_id]['nikname'].lower()
+                group['teammates'][player_id]['nikname'].lower().replace(' ', '-')
             )
             if not player_stats[1]:
                 player_stats[1] = {'data': []}

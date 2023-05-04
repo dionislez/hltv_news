@@ -44,6 +44,7 @@ COOKIES = {'hltvTimeZone': 'Europe/Copenhagen'}
 
 
 async def hltv_get_html(link: str):
+    await asyncio.sleep(3)
     async with aiohttp.ClientSession() as session:
         async with session.get(url=link) as response:
             if response.status < 400:
@@ -260,10 +261,11 @@ async def hltv_stats_player(player_id: str, player_nick: str):
         player_id=player_id,
         player_nick=player_nick
     ))
-
     rating_data = html_overview.find(class_='graph')
     if rating_data:
         rating_data = json.loads(rating_data['data-fusionchart-config'])['dataSource']
+
+    #TODO: check for None overview_stats or individual_stats or career_stats
     overview_stats = html_overview.find_all(class_='stats-row')
     individual_stats = html_individual.find_all(class_='stats-row')
     career_stats = html_career.find(class_='stats-table').find_all(class_='stat-rating')
@@ -291,7 +293,26 @@ async def hltv_stats_player(player_id: str, player_nick: str):
 
     return [overview_, rating_data]
 
-# if __name__ == '__main__':
+async def hltv_team_matches(team_id: str, team_name: str):
+    print(HLTV_LINKS['matches_team'].format(team_id=team_id, team_name=team_name))
+    html = await hltv_get_html(HLTV_LINKS['matches_team'].format(team_id=team_id, team_name=team_name))
+
+    stats_table = html.find(class_='stats-table no-sort').find('tbody').find_all('tr')
+    result = []
+    fields = ['date', 'event', 'opponent', 'map', 'score', 'result']
+
+    for stat in stats_table:
+        format_stat = stat.text.strip().split('\n')
+        stats = []
+        [stats.append(v) for v in format_stat if v not in stats]
+
+        dict_ = dict(zip(fields, stats))
+        dict_['date'] = str(datetime.strptime(dict_['date'], '%d/%m/%y'))
+        result.append(dict_)
+    return result
+
+if __name__ == '__main__':
+    print(asyncio.run(hltv_team_matches('12043', 'post-mortem')))
     # asyncio.run(hltv_stats_teams(datetime.utcnow()))
     # print(asyncio.run(hltv_stats_maps('8668')))
     # asyncio.run(hltv_stats_player('16207', 'dank1ng'))

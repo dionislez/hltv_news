@@ -13,6 +13,7 @@ db['history_news'].create_index([('date', 1)], unique=True)
 db['all_teams'].create_index([('team_id', 1)], unique=True)
 db['all_players'].create_index([('player_id', 1)], unique=True)
 db['overview_data'].create_index([('player_id', 1)], unique=True)
+db['matches'].create_index([('team_id', 1)], unique=True)
 
 
 async def htlv_actual_news_update(result: dict):
@@ -82,6 +83,15 @@ async def hltv_get_teammates():
         ).to_list(length=None)
     return teammates
 
+async def hltv_get_teams():
+    async with await client.start_session() as session:
+        teams = await db['all_teams'].find(
+            {},
+            projection={'_id': 0, 'team_id': 1, 'team': 1},
+            session=session
+        ).to_list(length=None)
+    return teams
+
 async def hltv_players_update(overview: dict, graph_data: dict):
     async with await client.start_session() as session:
         await db['all_players'].find_one_and_update(
@@ -93,6 +103,15 @@ async def hltv_players_update(overview: dict, graph_data: dict):
         await db['overview_data'].find_one_and_update(
             {'player_id': graph_data['player_id']},
             {'$set': graph_data},
+            upsert=True,
+            session=session
+        )
+
+async def hltv_update_matches(result: dict):
+    async with await client.start_session() as session:
+        await db['matches'].find_one_and_update(
+            {'team_id': result['team_id']},
+            {'$set': result},
             upsert=True,
             session=session
         )
