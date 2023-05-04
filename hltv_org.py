@@ -4,14 +4,17 @@ from datetime import datetime, timedelta
 from pprint import pprint
 
 import aiohttp
+from aiohttp.client_exceptions import ClientOSError
 from bs4 import BeautifulSoup
 from loguru import logger
 from selenium import webdriver
+from asyncio import TimeoutError
 from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
 
 from database import htlv_all_players_update
-from formetters.players_format import (hltv_career_check, html_individual_check,
+from formetters.players_format import (hltv_career_check,
+                                       html_individual_check,
                                        html_overview_check)
 
 HLTV_LINKS = {'actual_news': 'https://www.hltv.org',
@@ -44,8 +47,8 @@ COOKIES = {'hltvTimeZone': 'Europe/Copenhagen'}
 
 
 async def hltv_get_html(link: str):
-    await asyncio.sleep(3)
-    async with aiohttp.ClientSession() as session:
+    await asyncio.sleep(0.5)
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
         async with session.get(url=link) as response:
             if response.status < 400:
                 html = await response.text()
@@ -294,8 +297,22 @@ async def hltv_stats_player(player_id: str, player_nick: str):
     return [overview_, rating_data]
 
 async def hltv_team_matches(team_id: str, team_name: str):
-    print(HLTV_LINKS['matches_team'].format(team_id=team_id, team_name=team_name))
-    html = await hltv_get_html(HLTV_LINKS['matches_team'].format(team_id=team_id, team_name=team_name))
+    try:
+        html = await hltv_get_html(HLTV_LINKS['matches_team'].format(team_id=team_id, team_name=team_name))
+    except TimeoutError:
+        logger.error(f'TimeoutError: {team_id} - {team_name}')
+        with open('./logs/logs_matches.txt', 'a') as file:
+            file.write(f'{team_id},{team_name}\n')
+        return
+    except ClientOSError:
+        logger.error(f'ClientOSError: {team_id} - {team_name}')
+        with open('./logs/logs_matches.txt', 'a') as file:
+            file.write(f'{team_id},{team_name}\n')
+        return
+
+    if not html.find(class_='stats-table no-sort') or not html:
+        logger.error('No data')
+        return
 
     stats_table = html.find(class_='stats-table no-sort').find('tbody').find_all('tr')
     result = []
@@ -309,10 +326,10 @@ async def hltv_team_matches(team_id: str, team_name: str):
         dict_ = dict(zip(fields, stats))
         dict_['date'] = str(datetime.strptime(dict_['date'], '%d/%m/%y'))
         result.append(dict_)
-    return result
+    return {'matches': result, 'team_id': team_id, 'team': team_name}
 
-if __name__ == '__main__':
-    print(asyncio.run(hltv_team_matches('12043', 'post-mortem')))
+# if __name__ == '__main__':
+#     print(asyncio.run(hltv_team_matches('12043', 'post-mortem')))
     # asyncio.run(hltv_stats_teams(datetime.utcnow()))
     # print(asyncio.run(hltv_stats_maps('8668')))
     # asyncio.run(hltv_stats_player('16207', 'dank1ng'))
