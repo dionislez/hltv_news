@@ -1,36 +1,23 @@
 import asyncio
 import json
+from asyncio import TimeoutError
 from datetime import datetime, timedelta
 from pprint import pprint
 
 import aiohttp
-from aiohttp.client_exceptions import ClientOSError
+from aiohttp.client_exceptions import ClientOSError, ServerDisconnectedError
 from bs4 import BeautifulSoup
+from decouple import config
 from loguru import logger
 from selenium import webdriver
-from asyncio import TimeoutError
 from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
 
-from database import htlv_all_players_update
+from database import hltv_update_upcoming, htlv_all_players_update
 from formetters.players_format import (hltv_career_check,
                                        html_individual_check,
                                        html_overview_check)
 
-HLTV_LINKS = {'actual_news': 'https://www.hltv.org',
-              'history_news': 'https://www.hltv.org/news/archive/{year}/{month}',
-              'stats_teams': ('https://www.hltv.org/stats/teams'
-                              '?startDate={year}-01-01&endDate={year}-12-31'
-                              '&minMapCount=0'),
-              'stats_team': ('https://www.hltv.org/stats/teams/{team_id}'
-                             '/natus-vincere?startDate={year}-01-01'
-                             '&endDate={year}-12-31'),
-              'matches_team': ('https://www.hltv.org/stats/teams/'
-                               'matches/{team_id}/{team_name}?startDate=all'),
-              'stats_maps': 'https://www.hltv.org/stats/teams/maps/{team_id}/order',
-              'stats_players_overview': 'https://www.hltv.org/stats/players/{player_id}/{player_nick}',
-              'stats_players_individual': 'https://www.hltv.org/stats/players/individual/{player_id}/{player_nick}',
-              'stats_players_career': 'https://www.hltv.org/stats/players/career/{player_id}/{player_nick}'}
 HLTV_MONTH = {'01': 'january', '02': 'february', '03': 'march', '04': 'april',
               '05': 'may', '06': 'june', '07': 'july', '08': 'august',
               '09': 'september', '10': 'october', '11': 'november', '12': 'december'}
@@ -94,7 +81,7 @@ async def params_formatter(link: str):
     return check_link[0], params_dict
 
 async def hltv_actual_news():
-    html = await hltv_get_html(HLTV_LINKS['actual_news'])
+    html = await hltv_get_html(config('actual_news'))
     if not html:
         return
 
@@ -114,7 +101,7 @@ async def hltv_actual_news():
                     'title': data[0].replace("'", '`'),
                     'time': data[1],
                     'title_time': time_ago,
-                    'source_link': HLTV_LINKS['actual_news'] + item['href']
+                    'source_link': config('actual_news') + item['href']
                 }
             )
     return result_dict
@@ -132,7 +119,7 @@ async def title_ago(time: str) -> str:
     return int(title_time[0])
 
 async def hltv_history_news(year: str, month: str):
-    link = HLTV_LINKS['history_news'].format(year=year, month=HLTV_MONTH[month])
+    link = config('history_news').format(year=year, month=HLTV_MONTH[month])
     html = await hltv_get_html(link)
     if not html:
         return
@@ -145,20 +132,20 @@ async def hltv_history_news(year: str, month: str):
         if not result_dict[f'{year}-{month}'].get(data[1]):
             result_dict[f'{year}-{month}'][data[1]] = [{
                 'title': data[0].replace("'", '`'),
-                'source_link': HLTV_LINKS['actual_news'] + item['href']
+                'source_link': config('actual_news') + item['href']
             }]
             continue
         result_dict[f'{year}-{month}'][data[1]].append(
             {
                 'title': data[0].replace("'", '`'),
-                'source_link': HLTV_LINKS['actual_news'] + item['href']
+                'source_link': config('actual_news') + item['href']
             }
         )
     return result_dict
 
 async def hltv_stats_teams(current_time: datetime):
     team_fields = ['team', 'maps', 'kd_diff', 'kd', 'rating', 'team_id', 'location'] 
-    html = await hltv_get_html(HLTV_LINKS['stats_teams'].format(year=current_time.year))
+    html = await hltv_get_html(config('stats_teams').format(year=current_time.year))
     if not html:
         return
 
@@ -177,7 +164,7 @@ async def hltv_stats_teams(current_time: datetime):
 
 async def hltv_stats_by_team(team_data: dict, year: int):
     html = await hltv_get_html(
-        HLTV_LINKS['stats_team'].format(team_id=team_data['team_id'],
+        config('stats_team').format(team_id=team_data['team_id'],
                                         year=year)
     )
     if not html:
@@ -211,7 +198,7 @@ async def hltv_stats_by_team(team_data: dict, year: int):
                                                      'maps': int(teammate_info[-2].split(' ')[0])}
 
 async def hltv_stats_maps(team_id: str):
-    html = await hltv_get_html(HLTV_LINKS['stats_maps'].format(team_id=team_id))
+    html = await hltv_get_html(config('stats_maps').format(team_id=team_id))
     if not html:
         return {}
 
@@ -252,26 +239,46 @@ async def hltv_stats_maps(team_id: str):
     return result
 
 async def hltv_stats_player(player_id: str, player_nick: str):
-    html_overview = await hltv_get_html(HLTV_LINKS['stats_players_overview'].format(
-        player_id=player_id,
-        player_nick=player_nick
-    ))
-    html_individual = await hltv_get_html(HLTV_LINKS['stats_players_individual'].format(
-        player_id=player_id,
-        player_nick=player_nick
-    ))
-    html_career = await hltv_get_html(HLTV_LINKS['stats_players_career'].format(
-        player_id=player_id,
-        player_nick=player_nick
-    ))
+    try:
+        html_overview = await hltv_get_html(config('stats_players_overview').format(
+            player_id=player_id,
+            player_nick=player_nick
+        ))
+        html_individual = await hltv_get_html(config('stats_players_individual').format(
+            player_id=player_id,
+            player_nick=player_nick
+        ))
+        html_career = await hltv_get_html(config('stats_players_career').format(
+            player_id=player_id,
+            player_nick=player_nick
+        ))
+    except TimeoutError:
+        logger.error(f'TimeoutError: {player_id} - {player_nick}')
+        with open('./logs/logs_players.txt', 'a') as file:
+            file.write(f'{player_id},{player_nick}\n')
+        return
+    except ServerDisconnectedError:
+        logger.error(f'ServerDisconnectedError: {player_id} - {player_nick}')
+        with open('./logs/logs_players.txt', 'a') as file:
+            file.write(f'{player_id},{player_nick}\n')
+        return
+    except ClientOSError:
+        logger.error(f'ClientOSError: {player_id} - {player_nick}')
+        with open('./logs/logs_players.txt', 'a') as file:
+            file.write(f'{player_id},{player_nick}\n')
+        return
+
     rating_data = html_overview.find(class_='graph')
     if rating_data:
         rating_data = json.loads(rating_data['data-fusionchart-config'])['dataSource']
 
-    #TODO: check for None overview_stats or individual_stats or career_stats
-    overview_stats = html_overview.find_all(class_='stats-row')
-    individual_stats = html_individual.find_all(class_='stats-row')
-    career_stats = html_career.find(class_='stats-table').find_all(class_='stat-rating')
+    try:
+        overview_stats = html_overview.find_all(class_='stats-row')
+        individual_stats = html_individual.find_all(class_='stats-row')
+        career_stats = html_career.find(class_='stats-table').find_all(class_='stat-rating')
+    except AttributeError as error:
+        logger.error(f'AttributeError: {player_id} - {player_nick}\n{error}')
+        return
 
     overview_ = {}
     for index, stat in enumerate(overview_stats):
@@ -294,11 +301,11 @@ async def hltv_stats_player(player_id: str, player_nick: str):
             format_stat = stat.text.strip()
             await hltv_career_check(index, format_stat, overview_['career'][key])
 
-    return [overview_, rating_data]
+    return [overview_, rating_data, player_id]
 
 async def hltv_team_matches(team_id: str, team_name: str):
     try:
-        html = await hltv_get_html(HLTV_LINKS['matches_team'].format(team_id=team_id, team_name=team_name))
+        html = await hltv_get_html(config('matches_team').format(team_id=team_id, team_name=team_name))
     except TimeoutError:
         logger.error(f'TimeoutError: {team_id} - {team_name}')
         with open('./logs/logs_matches.txt', 'a') as file:
@@ -328,8 +335,76 @@ async def hltv_team_matches(team_id: str, team_name: str):
         result.append(dict_)
     return {'matches': result, 'team_id': team_id, 'team': team_name}
 
-# if __name__ == '__main__':
-#     print(asyncio.run(hltv_team_matches('12043', 'post-mortem')))
-    # asyncio.run(hltv_stats_teams(datetime.utcnow()))
-    # print(asyncio.run(hltv_stats_maps('8668')))
-    # asyncio.run(hltv_stats_player('16207', 'dank1ng'))
+async def hltv_upcoming_events():
+    html = await hltv_get_html(config('matches_upcoming'))
+    groups = html.find(class_='upcomingMatchesAll').find_all(class_='upcomingMatchesSection')
+    for matches in tqdm(groups, desc='groups'):
+        for match in tqdm(matches.find_all(class_='upcomingMatch'),
+                          desc=matches.find(class_='matchDayHeadline').text):
+            href = match.find('a')['href']
+            match_info = await hltv_match_info('https://www.hltv.org' + href)
+            if not match_info:
+                logger.error(f'No match_info {href}')
+                continue
+            match_info['match_id'] = href
+            await hltv_update_upcoming(match_info)
+
+async def hltv_match_info(match_link: str):
+    logger.info(match_link)
+    html = await hltv_get_html(match_link)
+    team_info = html.find(class_='standard-box teamsBox')
+    teams = team_info.find_all(class_='team')
+    start = team_info.find(class_='time')
+    players = html.find(class_='lineups-compare-container')
+    categs = html.find(class_='past-matches-grid')
+    if categs:
+        categs = categs.find_all(class_='past-matches-box text-ellipsis')
+    else:
+        categs = [[], []]
+    bo = len(html.find(class_='g-grid maps').find_all(class_='mapholder'))
+
+    result = {'teams': {}}
+    for index, team in enumerate(teams):
+        team_id = team.find('a')
+        if team_id:
+            team_id = team_id['href'].split('/')
+            result['teams'][team_id[2]] = {'team': team_id[3]}
+        else:
+            team_id = ['', '', str(index)]
+            result['teams'][team_id[2]] = {'team': team.text.strip()}
+            logger.info(f'No href data {match_link}')
+
+        if index == 0:
+            result['teams'][team_id[2]]['players'] = json.loads(players['data-team1-players-data']) if players else None
+            result['teams'][team_id[2]]['past_matches'] = await hltv_past_matches(categs[0])
+            continue
+
+        result['teams'][team_id[2]]['players'] = json.loads(players['data-team2-players-data']) if players else None
+        result['teams'][team_id[2]]['past_matches'] = await hltv_past_matches(categs[1])
+
+    result['bo'] = bo
+    result['start_time'] = str(datetime.utcfromtimestamp(int(start['data-unix']) / 1000))
+    result['timestamp'] = int(start['data-unix'])
+    return result
+
+async def hltv_past_matches(category: str):
+    if not category:
+        return
+
+    matches = category.find_all('tr')
+    results = []
+    for match in matches:
+        match_link = match.find(class_='past-matches-score')
+        if match_link:
+            match_link = match_link.find('a')['href']
+        fields = ['opponent', 'played', 'bo', 'score']
+        data = match.text.strip().split('\n')
+        data = list(filter(lambda x: x != '', data))
+        past_3 = dict(zip(fields, data))
+        if match.find(class_='past-matches-cell lost'):
+            past_3['result'] = 'lose'
+        else:
+            past_3['result'] = 'win'
+        past_3['link'] = match_link
+        results.append(past_3)
+    return results

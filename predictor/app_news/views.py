@@ -1,10 +1,12 @@
 from datetime import datetime
 
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from utils import get_news, get_news_archive
+from django.urls import reverse
 
 from forms import DateForm
+
 
 NAMES = {
     "actual_news": "Today's news",
@@ -15,6 +17,9 @@ NAMES = {
 
 
 def news_page_actual(request: HttpRequest) -> HttpResponse:
+    if not request.user.is_authenticated:
+        return redirect(reverse('home'))
+
     form = DateForm()
     current_date = datetime.utcnow()
     url_name = request.resolver_match.url_name

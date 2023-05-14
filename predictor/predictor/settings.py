@@ -1,8 +1,20 @@
 from pathlib import Path
+from decouple import config
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+STATIC_URL = 'predictor/templates/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'templates', 'static')]
+
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_FROM = config('EMAIL_FROM')
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_BACKEND = config('EMAIL_BACKEND')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -26,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app_news',
-    'app_users'
+    'app_users',
+    'app_register'
 ]
 
 MIDDLEWARE = [
@@ -65,13 +78,11 @@ WSGI_APPLICATION = 'predictor.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'webpredict',
-        'USER': 'root',
-        'PASSWORD': 'root',
+        'ENGINE': 'djongo',
+        'NAME': 'Predictor',
         'HOST': 'localhost',
-        'PORT': '5433',
-    },
+        'PORT': 27017,
+    }
 }
 
 

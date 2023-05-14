@@ -159,6 +159,31 @@
             transform: translateY(-2px);
             background-color: #333333;
         }
+
+        header {
+            position: relative;
+        }
+
+        .user-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .user-button .button {
+            background-color: #333333;
+            border: 3px solid rgb(255, 0, 0);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            transition: transform 0.2s;
+        }
+
+        .user-button .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(255, 0, 0);
+        }
     </style>
 </head>
 <body>
@@ -169,6 +194,9 @@
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+        </div>
+        <div class="user-button">
+            <a href="{% url 'home' %}" class="button">ACCOUNT</a>
         </div>
     </header>
     <div class="button-container-news">

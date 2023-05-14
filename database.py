@@ -14,6 +14,7 @@ db['all_teams'].create_index([('team_id', 1)], unique=True)
 db['all_players'].create_index([('player_id', 1)], unique=True)
 db['overview_data'].create_index([('player_id', 1)], unique=True)
 db['matches'].create_index([('team_id', 1)], unique=True)
+db['upcoming'].create_index([('match_id', 1)], unique=True)
 
 
 async def htlv_actual_news_update(result: dict):
@@ -115,3 +116,26 @@ async def hltv_update_matches(result: dict):
             upsert=True,
             session=session
         )
+
+async def hltv_update_upcoming(result: dict):
+    async with await client.start_session() as session:
+        await db['upcoming'].find_one_and_update(
+            {'match_id': result['match_id']},
+            {'$set': result},
+            upsert=True,
+            session=session
+        )
+
+async def hltv_get_upcoming():
+    async with await client.start_session() as session:
+        result = await db['upcoming'].find(
+            {},
+            {
+                '_id': 0,
+                'timestamp': 0,
+                'start_time': 0,
+                'bo': 0
+            },
+            session=session
+        ).to_list(length=None)
+    return result
