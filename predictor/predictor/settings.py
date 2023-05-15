@@ -5,7 +5,6 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-STATIC_URL = 'predictor/templates/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'templates', 'static')]
 
 EMAIL_USE_TLS = True
@@ -38,8 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app_news',
-    'app_users',
-    'app_register'
+    'app_register',
+    'app_upcoming'
 ]
 
 MIDDLEWARE = [

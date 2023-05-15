@@ -164,7 +164,7 @@
         <h1>CS:GO NEWS</h1>
         <div class="button-container" style="max-width: 983px;">
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
-            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
         </div>
@@ -182,7 +182,7 @@
         {% for item in items %}
         <div class="post">
             <h2>{{ item.title }}</h2>
-            <a href="{{ item.source_link }}" class="button">HLTV</a>
+            <a href="{{ item.source_link }}" class="button" style="margin-right: 10px;">HLTV</a>
             <p class="time">{{ item.time }}</p>
         </div>
         {% endfor %}

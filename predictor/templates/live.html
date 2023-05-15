@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -61,7 +62,7 @@
             text-align: center;
             border-radius: 8%;
             flex-grow: 1;
-            margin: 0 20px;
+            margin: 0 250px;
             background-color: #282828;
             border: 3px solid rgb(0, 128, 66);
             color: #FFFFFF;
@@ -101,6 +102,7 @@
             font-size: 24px;
             margin: 20px;
             text-transform: uppercase;
+            text-align: center;
         }
 
         .post .time {
@@ -137,33 +139,6 @@
             margin: 0;
         }
 
-        form {
-            max-height: 100px;
-        }
-
-        form, button {
-            border-radius: 5px;
-            background-color: rgb(113, 0, 128);
-            border: 2px solid rgb(113, 0, 128);
-            color: #FFFFFF;
-            font: 14pt monospace;
-            float: center;
-            text-align: center;
-            line-height: 1;
-            padding-bottom: 2px;
-            margin-top: 1px;
-            transition: transform 0.2s;
-        }
-
-        form, button:hover {
-            transform: translateY(-2px);
-            background-color: #333333;
-        }
-
-        header {
-            position: relative;
-        }
-
         .user-button {
             position: absolute;
             top: 20px;
@@ -184,11 +159,16 @@
             transform: translateY(-2px);
             background-color: rgb(255, 0, 0);
         }
+
+        .post h2 img {
+            width: 100px;
+            height: 100px;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>CS:GO NEWS</h1>
+        <h1>CS:GO UPCOMING</h1>
         <div class="button-container" style="max-width: 983px;">
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
             <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
@@ -200,22 +180,40 @@
         </div>
     </header>
     <div class="button-container-news">
-        <a href="{% url 'actual_news' %}" class="button">TODAY</a>
-        <a href="{% url 'yesterday_news' %}" class="button">YESTERDAY</a>
-        <a href="{% url 'previous_news' %}" class="button">PREVIOUS</a>
-        <a href="{% url 'archive_news' %}" class="button">ARCHIVE</a>
+        <a href="{% url 'upcoming' %}" class="button">TODAY</a>
+        <a href="{% url 'live' %}" class="button">LIVE</a>
     </div>
     <div class="container">
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Submit</button>
-        </form>
         {% for item in items %}
         <div class="post">
-            <h2>{{ item.title }}</h2>
-            <a href="{{ item.source_link }}" class="button" style="margin-right: 10px;">HLTV</a>
-            <p class="time">{{ time }}</p>
+            {% if item.team_0.source and item.team_1.source %}
+            <h2>
+                <img src="{{ item.team_0.source }}" alt="">
+                <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
+                <img src="{{ item.team_1.source }}" alt="">
+            </h2>
+            {% elif not item.team_0.source and not item.team_1.source %}
+            <h2>
+                <img src="{% static '/not_found.png' %}" alt="">
+                <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
+                <img src="{% static '/not_found.png' %}" alt="">
+            </h2>
+            {% elif not item.team_0.source %}
+            <h2>
+                <img src="{% static '/not_found.png' %}" alt="">
+                <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
+                <img src="{{ item.team_1.source }}" alt="">
+            </h2>
+            {% elif not item.team_1.source %}
+            <h2>
+                <img src="{{ item.team_0.source }}" alt="">
+                <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
+                <img src="{% static '/not_found.png' %}" alt="">
+            </h2>
+            {% endif %}
+            <a href="https://www.hltv.org{{ item.match_link }}" class="button" style="margin-right: 10px;">HLTV</a>
+            <a href="" class="button" style="margin: 0 10px;">STATS</a>
+            <p class="time">{{ item.start_time }}</p>
         </div>
         {% endfor %}
     </div>
