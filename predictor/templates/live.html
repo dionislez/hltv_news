@@ -96,6 +96,7 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
             margin-bottom: 20px;
             overflow: hidden;
+            position: relative;
         }
 
         .post h2 {
@@ -160,15 +161,101 @@
             background-color: rgb(255, 0, 0);
         }
 
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .pagination .page-link {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            border: 1px solid #333333;
+            background-color: #282828;
+            color: #FFFFFF;
+            text-decoration: none;
+        }
+
+        .pagination .page-link:hover {
+            background-color: rgb(113, 0, 128);
+        }
+
+        .pagination .page-link.active {
+            background-color: rgb(113, 0, 128);
+            color: #FFFFFF;
+        }
+
         .post h2 img {
             width: 100px;
             height: 100px;
+        }
+
+        .post .button.star {
+            font-size: 10.5pt;
+            padding: 4px 10px;
+        }
+
+        .post .team-names {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .post .team-names .team-left,
+        .post .team-names .team-right {
+            text-align: left;
+            margin: 0;
+        }
+
+        .post .team-names .team-right {
+            text-align: right;
+        }
+
+        .post .left-corner-text {
+            position: absolute;
+            font-size: 15pt;
+            border: 2px solid rgb(113, 0, 128);
+            top: 20px;
+            left: 20px;
+        }
+
+        .post .right-corner-text {
+            position: absolute;
+            font-size: 15pt;
+            border: 2px solid rgb(113, 0, 128);
+            top: 20px;
+            right: 20px;
+        }
+
+        .post img.team-logo {
+            width: 30px;
+            height: 20px;
+            position: absolute;
+            top: 10px;
+        }
+
+        .post img.team-left {
+            left: 10px;
+        }
+
+        .post img.team-right {
+            right: 10px;
+        }
+
+        .alert {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            background-color: #111;
+            color: #fff;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>CS:GO UPCOMING</h1>
+        <h1>CS:GO LIVE</h1>
         <div class="button-container" style="max-width: 983px;">
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
             <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
@@ -180,12 +267,52 @@
         </div>
     </header>
     <div class="button-container-news">
-        <a href="{% url 'upcoming' %}" class="button">TODAY</a>
+        <a href="{% url 'upcoming' %}" class="button">FUTURE</a>
         <a href="{% url 'live' %}" class="button">LIVE</a>
     </div>
     <div class="container">
+        {% for message in messages %}
+            <div class="alert">
+                <strong>{{ message }}</strong>
+            </div>
+            <script>
+                setTimeout(function() {
+                    document.querySelector('.alert').style.opacity = '0';
+                    setTimeout(function() {
+                        document.querySelector('.alert').style.display = 'none';
+                    }, 1000);
+                }, 10000);
+            </script>
+            {% endfor %}
         {% for item in items %}
         <div class="post">
+            {% if not item.team_0.flag and not item.team_1.flag %}
+            <img src="{% static '/flag.png' %}" alt="" class="team-logo team-left">
+            <img src="{% static '/flag.png' %}" alt="" class="team-logo team-right">
+            {% elif not item.team_0.flag and item.team_1.flag%}
+            <img src="{% static '/flag.png' %}" alt="" class="team-logo team-left">
+            <img src="https://www.hltv.org{{ item.team_1.flag }}" alt="" class="team-logo team-right">
+            {% elif item.team_0.flag and not item.team_1.flag%}
+            <img src="https://www.hltv.org{{ item.team_0.flag }}" alt="" class="team-logo team-left">
+            <img src="{% static '/flag.png' %}" alt="" class="team-logo team-right">
+            {% elif item.team_0.flag and item.team_1.flag%}
+            <img src="https://www.hltv.org{{ item.team_0.flag }}" alt="" class="team-logo team-left">
+            <img src="https://www.hltv.org{{ item.team_1.flag }}" alt="" class="team-logo team-right">
+            {% endif %}
+            <p class="left-corner-text">
+                {% if item.team_0.team %}
+                {{ item.team_0.team.upper }}
+                {% else %}
+                UNKNOWN
+                {% endif %}
+            </p>
+            <p class="right-corner-text">
+                {% if item.team_1.team %}
+                {{ item.team_1.team.upper }}
+                {% else %}
+                UNKNOWN
+                {% endif %}
+            </p>
             {% if item.team_0.source and item.team_1.source %}
             <h2>
                 <img src="{{ item.team_0.source }}" alt="">
@@ -211,12 +338,32 @@
                 <img src="{% static '/not_found.png' %}" alt="">
             </h2>
             {% endif %}
+            <a href="{% url 'favorites' item.match_id %}" class="button star" style="background-color: 333333; color: white;">&#9733;</a>
             <a href="https://www.hltv.org{{ item.match_link }}" class="button" style="margin-right: 10px;">HLTV</a>
             <a href="" class="button" style="margin: 0 10px;">STATS</a>
             <p class="time">{{ item.start_time }}</p>
         </div>
         {% endfor %}
     </div>
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page=1" class="page-link">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Previous</a>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <span class="page-link active">{{ num }}</span>
+            {% else %}
+                <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">Last</a>
+        {% endif %}
+    </div>   
 </body>
 <footer>
     {{ date }}

@@ -1,12 +1,17 @@
 from datetime import datetime
 
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import HttpRequest
-from django.shortcuts import render
-from utils import get_live_events, get_upcoming_events
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from utils import get_live_events, get_upcoming_events, updating_favourites
 
 
 def upcoming(request: HttpRequest):
+    if not request.user.is_authenticated:
+        return redirect(reverse('home'))
+
     current_date = datetime.utcnow()
     events = get_upcoming_events()
 
@@ -29,6 +34,19 @@ def upcoming(request: HttpRequest):
     return render(request, 'upcoming.html', context)
 
 def live(request: HttpRequest):
+    if not request.user.is_authenticated:
+        return redirect(reverse('home'))
     current_date = datetime.utcnow()
     events = get_live_events()
     return render(request, 'live.html', {'items': events, 'date': current_date.date})
+
+def favorites(request: HttpRequest, match_id: int):
+    updated, message = updating_favourites(request.user.username,
+                                           request.user.email,
+                                           'upcoming',
+                                           match_id)
+    if updated:
+        messages.success(request, message)
+    else:
+        messages.success(request, message)
+    return redirect(request.META.get('HTTP_REFERER'))
