@@ -13,7 +13,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
 
-from database import hltv_update_upcoming, htlv_all_players_update
+from database import hltv_delete_live, hltv_delete_upcoming, hltv_update_live, hltv_update_upcoming, htlv_all_players_update
 from formetters.players_format import (hltv_career_check,
                                        html_individual_check,
                                        html_overview_check)
@@ -335,8 +335,29 @@ async def hltv_team_matches(team_id: str, team_name: str):
         result.append(dict_)
     return {'matches': result, 'team_id': team_id, 'team': team_name}
 
+async def hltv_updating_live(current_time: str, html):
+    live_matches = html.find(class_='liveMatchesContainer')
+    if not live_matches:
+        logger.info('No live matches')
+        return
+    live_matches = live_matches.find(class_='liveMatches').find_all(class_='liveMatch-container')
+    for match in tqdm(live_matches):
+        links = match.find(class_='liveMatch').find_all('a')
+        href = links[0]['href']
+        match_info = await hltv_match_info('https://www.hltv.org' + href)
+        if not match_info:
+            logger.error(f'No match_info {href}')
+            continue
+        match_info['match_link'] = href
+        match_info['analytics_link'] = links[1]['href']
+        match_info['match_id'] = int(href.split('/')[2])
+        match_info['current_time'] = current_time
+        await hltv_update_live(match_info)
+    await hltv_delete_live(current_time)
+
 async def hltv_upcoming_events():
     html = await hltv_get_html(config('matches_upcoming'))
+    current_time = str(datetime.utcnow())
     groups = html.find(class_='upcomingMatchesAll').find_all(class_='upcomingMatchesSection')
     for matches in tqdm(groups, desc='groups'):
         for match in tqdm(matches.find_all(class_='upcomingMatch'),
@@ -346,8 +367,13 @@ async def hltv_upcoming_events():
             if not match_info:
                 logger.error(f'No match_info {href}')
                 continue
-            match_info['match_id'] = href
+            match_info['match_link'] = href
+            match_info['match_id'] = int(href.split('/')[2])
+            match_info['current_time'] = current_time
             await hltv_update_upcoming(match_info)
+    await hltv_delete_upcoming(current_time)
+    logger.info('Started updating live')
+    await hltv_updating_live(current_time, html)
 
 async def hltv_match_info(match_link: str):
     logger.info(match_link)
@@ -366,12 +392,18 @@ async def hltv_match_info(match_link: str):
     result = {'teams': {}}
     for index, team in enumerate(teams):
         team_id = team.find('a')
+        if not team_id.find('img') or not team.find('img'):
+            source = 'unknown.png'
+            flag = 'unknown.png'
+        else:
+            source = team_id.find('img')['src']
+            flag = team.find('img')['src']
         if team_id:
             team_id = team_id['href'].split('/')
-            result['teams'][team_id[2]] = {'team': team_id[3]}
+            result['teams'][team_id[2]] = {'team': team_id[3], 'source': source, 'flag': flag}
         else:
             team_id = ['', '', str(index)]
-            result['teams'][team_id[2]] = {'team': team.text.strip()}
+            result['teams'][team_id[2]] = {'team': team.text.strip(), 'source': source, 'flag': flag}
             logger.info(f'No href data {match_link}')
 
         if index == 0:
@@ -408,3 +440,85 @@ async def hltv_past_matches(category: str):
         past_3['link'] = match_link
         results.append(past_3)
     return results
+
+async def hltv_match_score_total(match_link: str):
+    html = await hltv_get_html(config('hltv_domain') + match_link)
+    mapholders = html.find(class_='flexbox-column')
+    players = html.find(class_='stats-content')
+
+    if not players and mapholders:
+        mapholder = mapholders.find_all(class_='mapholder')[0]
+        default_ = mapholder.find(class_='map-name-holder').find('img')['alt']
+        if default_ == 'Default':
+            results = mapholder.find(class_='results played')
+            team_0 = results.find(class_='results-left')['class']
+            team_1 = results.find(class_='results-right')['class']
+            if team_0[1] == 'won':
+                return {'total_score': {'winner': 0}}
+            return {'total_score': {'winner': 1}}
+        return
+    if not mapholders or not players:
+        return
+
+    mapholders = mapholders.find_all(class_='mapholder')
+    players = players.find_all(class_='table totalstats')
+
+    data = {}
+    for index, mapholder in enumerate(mapholders):
+        map_played = mapholder.find(class_='map-name-holder').find('img')
+        data[str(index + 1)] = {'map': map_played['alt'], 'pic': map_played['src']}
+
+        map_result = mapholder.find(class_='results played')
+        if not map_result:
+            data[str(index + 1)]['team_0'] = None
+            data[str(index + 1)]['team_1'] = None
+            data[str(index + 1)]['pick'] = 3
+            continue
+        team_left = map_result.find(class_='results-left')
+        score = int(team_left.find(class_='results-team-score').text.strip())
+        data[str(index + 1)]['team_0'] = {'score': score}
+        team_right = map_result.find(class_='results-right')
+        score = int(team_right.find(class_='results-team-score').text.strip())
+        data[str(index + 1)]['team_1'] = {'score': score}
+
+        if len(team_left['class']) == len(team_right['class']):
+            data[str(index + 1)]['pick'] = 3
+            continue
+        elif len(team_left['class']) > len(team_right['class']):
+            data[str(index + 1)]['pick'] = 0
+            continue
+        data[str(index + 1)]['pick'] = 1
+    
+    team_0 = team_1 = 0
+    for map in data:
+        if not data[map]['team_0'] or not data[map]['team_1']:
+            continue
+        if data[map]['team_0']['score'] > data[map]['team_1']['score']:
+            team_0 += 1
+            continue
+        team_1 += 1
+    
+    if team_0 > team_1:
+        data['total_score'] = {'score': [team_0, team_1], 'winner': 0}
+    else:
+        data['total_score'] = {'score': [team_0, team_1], 'winner': 1}
+    
+    for index, player in enumerate(players):
+        team_data = player.find_all('tr')
+        team_players = {}
+        for team in team_data:
+            if team['class'] == ['header-row']:
+                continue
+            href = team.find(class_='players').find('a')['href']
+            name = href.split('/')[-1]
+            team_players[name] = {}
+            team_players[name]['player_link'] = href
+            team_players[name]['kd'] = [
+                int(value) for value in team.find(class_='kd text-center').text.strip().split('-')
+            ]
+            team_players[name]['kd_stat'] = team_players[name]['kd'][0] - team_players[name]['kd'][1]
+            team_players[name]['adr'] = float(team.find(class_='adr text-center').text.strip())
+            team_players[name]['kast_perc'] = float(team.find(class_='kast text-center').text.strip().replace('%', ''))
+            team_players[name]['rating'] = float(team.find(class_='rating text-center').text.strip())
+        data['players_after_' + str(index)] = team_players
+    return data

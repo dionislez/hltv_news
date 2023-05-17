@@ -15,6 +15,8 @@ db['all_players'].create_index([('player_id', 1)], unique=True)
 db['overview_data'].create_index([('player_id', 1)], unique=True)
 db['matches'].create_index([('team_id', 1)], unique=True)
 db['upcoming'].create_index([('match_id', 1)], unique=True)
+db['live'].create_index([('match_id', 1)], unique=True)
+db['all_played'].create_index([('match_id', 1)], unique=True)
 
 
 async def htlv_actual_news_update(result: dict):
@@ -117,6 +119,15 @@ async def hltv_update_matches(result: dict):
             session=session
         )
 
+async def hltv_update_live(result: dict):
+    async with await client.start_session() as session:
+        await db['live'].find_one_and_update(
+            {'match_id': result['match_id']},
+            {'$set': result},
+            upsert=True,
+            session=session
+        )
+
 async def hltv_update_upcoming(result: dict):
     async with await client.start_session() as session:
         await db['upcoming'].find_one_and_update(
@@ -139,3 +150,63 @@ async def hltv_get_upcoming():
             session=session
         ).to_list(length=None)
     return result
+
+async def hltv_delete_upcoming(current_time):
+    async with await client.start_session() as session:
+        deleted_upcoming = await db['upcoming'].find(
+            {'current_time': {'$ne': current_time}},
+            {'_id': 0, 'current_time': 0},
+            session=session
+        ).to_list(length=None)
+        await db['upcoming'].delete_many(
+            {'current_time': {'$ne': current_time}},
+            {},
+            session=session
+        )
+        for deleted in deleted_upcoming:
+            await db['all_played'].find_one_and_update(
+                {'match_id': deleted['match_id']},
+                {'$set': deleted},
+                upsert=True,
+                session=session
+            )
+
+async def hltv_delete_live(current_time):
+    async with await client.start_session() as session:
+        deleted_live = await db['live'].find(
+            {'current_time': {'$ne': current_time}},
+            {'_id': 0, 'current_time': 0},
+            session=session
+        ).to_list(length=None)
+        await db['live'].delete_many(
+            {'current_time': {'$ne': current_time}},
+            {},
+            session=session
+        )
+        for deleted in deleted_live:
+            await db['all_played'].find_one_and_update(
+                {'match_id': deleted['match_id']},
+                {'$set': deleted},
+                upsert=True,
+                session=session
+            )
+
+async def hltv_get_all_played():
+    async with await client.start_session() as session:
+        all_played = await db['all_played'].find(
+            {'total_score': {'$eq': None}},
+            {'_id': 0},
+            session=session
+        ).to_list(length=None)
+    if not all_played:
+        return
+    return all_played
+
+async def hltv_update_all_played(match_id: int, data: dict):
+    async with await client.start_session() as session:
+        await db['all_played'].find_one_and_update(
+            {'match_id': match_id},
+            {'$set': data},
+            upsert=True,
+            session=session
+        )
