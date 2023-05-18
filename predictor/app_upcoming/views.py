@@ -36,11 +36,15 @@ def upcoming(request: HttpRequest):
 def live(request: HttpRequest):
     if not request.user.is_authenticated:
         return redirect(reverse('home'))
+
     current_date = datetime.utcnow()
     events = get_live_events()
     return render(request, 'live.html', {'items': events, 'date': current_date.date})
 
 def favorites(request: HttpRequest, match_id: int):
+    if not request.user.is_authenticated:
+        return redirect(reverse('home'))
+
     updated, message = updating_favourites(request.user.username,
                                            request.user.email,
                                            'upcoming',
@@ -49,4 +53,7 @@ def favorites(request: HttpRequest, match_id: int):
         messages.success(request, message)
     else:
         messages.success(request, message)
+
+    if not request.META.get('HTTP_REFERER'):
+        return redirect(reverse('home'))
     return redirect(request.META.get('HTTP_REFERER'))

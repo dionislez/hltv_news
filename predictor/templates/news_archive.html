@@ -53,6 +53,7 @@
         .button-container-news {
             display: flex;
             padding: 20px 0px 0px;
+            justify-content: center;
         }
 
         .button-container-news .button {
@@ -61,7 +62,7 @@
             text-align: center;
             border-radius: 8%;
             flex-grow: 1;
-            margin: 0 20px;
+            margin: 0 10px;
             background-color: #282828;
             border: 3px solid rgb(0, 128, 66);
             color: #FFFFFF;
@@ -192,8 +193,9 @@
         <div class="button-container" style="max-width: 983px;">
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
             <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
-            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
-            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'actual_news' %}" class="button">MATCHES</a>
+            <a href="{% url 'actual_news' %}" class="button">PLAYERS</a>
+            <a href="{% url 'user_fav_upcoming' %}" class="button">FAVOURITES</a>
         </div>
         <div class="user-button">
             <a href="{% url 'home' %}" class="button">ACCOUNT</a>

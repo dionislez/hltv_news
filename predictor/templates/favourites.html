@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CS:GO LIVE</title>
+    <title>CS:GO FAVOURITES</title>
     <style>
         body {
             background-color: #1E1E1E;
@@ -162,25 +162,6 @@
             background-color: rgb(255, 0, 0);
         }
 
-        .pagination {
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .pagination .page-link {
-            display: inline-block;
-            margin: 5px;
-            padding: 5px 10px;
-            border: 1px solid #333333;
-            background-color: #282828;
-            color: #FFFFFF;
-            text-decoration: none;
-        }
-
-        .pagination .page-link:hover {
-            background-color: rgb(113, 0, 128);
-        }
-
         .pagination .page-link.active {
             background-color: rgb(113, 0, 128);
             color: #FFFFFF;
@@ -256,7 +237,7 @@
 </head>
 <body>
     <header>
-        <h1>CS:GO LIVE</h1>
+        <h1>CS:GO FAVOURITES</h1>
         <div class="button-container" style="max-width: 983px;">
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
             <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
@@ -269,8 +250,9 @@
         </div>
     </header>
     <div class="button-container-news">
-        <a href="{% url 'upcoming' %}" class="button">FUTURE</a>
-        <a href="{% url 'live' %}" class="button">LIVE</a>
+        <a href="{% url 'user_fav_upcoming' %}" class="button">UPCOMING</a>
+        <a href="{% url 'user_fav_matches' %}" class="button">MATCHES</a>
+        <a href="{% url 'user_fav_players' %}" class="button">PLAYERS</a>
     </div>
     <div class="container">
         {% for message in messages %}
@@ -340,32 +322,13 @@
                 <img src="{% static '/not_found.png' %}" alt="">
             </h2>
             {% endif %}
-            <a href="{% url 'favorites' item.match_id %}" class="button star" style="background-color: 333333; color: white;">&#9733;</a>
+            <a href="{% url 'upcoming_del' item.match_id %}" class="button star" style="background-color: 333333; color: white;">&#10060;</a>
             <a href="https://www.hltv.org{{ item.match_link }}" class="button" style="margin-right: 10px;">HLTV</a>
             <a href="" class="button" style="margin: 0 10px;">STATS</a>
             <p class="time">{{ item.start_time }}</p>
         </div>
         {% endfor %}
     </div>
-    <div class="pagination">
-        {% if page_obj.has_previous %}
-            <a href="?page=1" class="page-link">First</a>
-            <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Previous</a>
-        {% endif %}
-
-        {% for num in page_obj.paginator.page_range %}
-            {% if num == page_obj.number %}
-                <span class="page-link active">{{ num }}</span>
-            {% else %}
-                <a href="?page={{ num }}" class="page-link">{{ num }}</a>
-            {% endif %}
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">Last</a>
-        {% endif %}
-    </div>   
 </body>
 <footer>
     {{ date }}

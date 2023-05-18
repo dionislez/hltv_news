@@ -1,7 +1,8 @@
 from typing import Optional
 
 from decouple import config
-from pymongo import MongoClient, DESCENDING, ASCENDING
+from loguru import logger
+from pymongo import ASCENDING, DESCENDING, MongoClient
 
 
 def connect(client: str, collection: str) -> MongoClient:
@@ -49,6 +50,45 @@ def get_live_events():
                 events[f'team_{index}']['source'] = ''
     return all_events
 
+def get_user_favourites(username: str, email: str, category: str):
+    connect_ = connect('django_data', 'auth_user')
+    favourites = connect_.find_one(
+        {'username': username, 'email': email},
+        {'_id': 0, 'favourites': 1}
+    )
+    if not favourites or not favourites['favourites'].get(category) or not favourites['favourites'][category]:
+        return
+
+    results, found_ids = [], set()
+    for collection in ['upcoming', 'live', 'all_played']:
+        found = connect('parsed_data', collection).aggregate(
+            [{'$match': {'match_id': {'$in': favourites['favourites'][category]}}}]
+        )
+        results.extend(found)
+        found_ids.update(match['match_id'] for match in results)
+
+    results = sorted(results, key=lambda x: x['timestamp'])
+    not_found_ids = set(favourites['favourites'][category]) - found_ids
+    if not_found_ids:
+        for id_ in not_found_ids:
+            favourites['favourites'][category].remove(id_)
+        connect_.find_one_and_update(
+            {'username': username, 'email': email},
+            {'$set': favourites},
+            upsert=True,
+        )
+        logger.info('Not found and deleted '
+                    f'{len(not_found_ids)} - '
+                    f'{category} ({username}, {email})')
+
+    for events in results:
+        for index, event in enumerate(events['teams']):
+            events[f'team_{index}'] = events['teams'][event]
+            if events[f'team_{index}']['source'] == '/img/static/team/placeholder.svg':
+                events[f'team_{index}']['source'] = ''
+
+    return results
+
 def updating_favourites(username: str, email: str, category: str, match_id: int):
     connect_ = connect('django_data', 'auth_user')
     favourites = connect_.find_one(
@@ -86,3 +126,24 @@ def updating_favourites(username: str, email: str, category: str, match_id: int)
         upsert=True,
     )
     return True, f'Added {match_id} Match'
+
+def deleting_favourites_upcoming(username: str, email: str, category: str, match_id: int):
+    connect_ = connect('django_data', 'auth_user')
+    favourites = connect_.find_one(
+        {'username': username, 'email': email},
+        {'_id': 0, 'favourites': 1}
+    )
+
+    if not favourites or not favourites['favourites'].get(category):
+        return
+
+    if match_id not in favourites['favourites'][category]:
+        return
+
+    favourites['favourites'][category].remove(match_id)
+    connect_.find_one_and_update(
+        {'username': username, 'email': email},
+        {'$set': favourites},
+        upsert=True,
+    )
+    return
