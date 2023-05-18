@@ -497,12 +497,12 @@ async def hltv_match_score_total(match_link: str):
             team_0 += 1
             continue
         team_1 += 1
-    
+
     if team_0 > team_1:
         data['total_score'] = {'score': [team_0, team_1], 'winner': 0}
     else:
         data['total_score'] = {'score': [team_0, team_1], 'winner': 1}
-    
+
     for index, player in enumerate(players):
         team_data = player.find_all('tr')
         team_players = {}
@@ -521,4 +521,23 @@ async def hltv_match_score_total(match_link: str):
             team_players[name]['kast_perc'] = float(team.find(class_='kast text-center').text.strip().replace('%', ''))
             team_players[name]['rating'] = float(team.find(class_='rating text-center').text.strip())
         data['players_after_' + str(index)] = team_players
+    return data
+
+async def hltv_teams_check_played(match_link: str):
+    html = await hltv_get_html(config('hltv_domain') + match_link)
+    match_ = html.find(class_='match-page')
+    if not match_:
+        return
+    teams = match_.find(class_='standard-box teamsBox').find_all(class_='team')
+    data = {'teams_current': {}}
+    for index, team in enumerate(teams):
+        srcs = team.find_all('img')
+        flag = source = name = ''
+        for inx, src in enumerate(srcs):
+            if inx == 0:
+                flag = src['src']
+                continue
+            source = src['src']
+            name = src['alt'].lower()
+        data['teams_current'][str(index)] = {'flag': flag, 'source': source, 'team': name}
     return data
