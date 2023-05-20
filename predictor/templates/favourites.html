@@ -233,6 +233,30 @@
             background-color: #111;
             color: #fff;
         }
+
+        .post .team-number-left {
+            position: absolute;
+            font-size: 50pt;
+            color: #FFFFFF;
+            top: 60px;
+            left: 240px;
+        }
+
+        .post .team-number-right {
+            position: absolute;
+            font-size: 50pt;
+            color: #FFFFFF;
+            top: 60px;
+            right: 240px;
+        }
+
+        .post .bo {
+            font: 25pt monospace;
+            width: fit-content;
+            text-align: center;
+            margin: -60px auto 0;
+            border: 2px solid rgb(113, 0, 128);
+        }
     </style>
 </head>
 <body>
@@ -270,6 +294,8 @@
             {% endfor %}
         {% for item in items %}
         <div class="post">
+            <span class="team-number-left" style="color: {{ item.team_0.color }};">{{ item.team_0.score }}</span>
+            <span class="team-number-right" style="color: {{ item.team_1.color }};">{{ item.team_1.score }}</span>
             {% if not item.team_0.flag and not item.team_1.flag %}
             <img src="{% static '/flag.png' %}" alt="" class="team-logo team-left">
             <img src="{% static '/flag.png' %}" alt="" class="team-logo team-right">
@@ -326,6 +352,7 @@
             <a href="https://www.hltv.org{{ item.match_link }}" class="button" style="margin-right: 10px;">HLTV</a>
             <a href="" class="button" style="margin: 0 10px;">STATS</a>
             <p class="time">{{ item.start_time }}</p>
+            <p class="bo">BO<span style="color: rgb(113, 0, 128);">{{ item.bo }}</span></p>
         </div>
         {% endfor %}
     </div>

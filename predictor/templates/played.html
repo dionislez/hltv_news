@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CS:GO LIVE</title>
+    <title>CS:GO UPCOMING</title>
     <style>
         body {
             background-color: #1E1E1E;
@@ -253,6 +253,22 @@
             color: #fff;
         }
 
+        .post .team-number-left {
+            position: absolute;
+            font-size: 50pt;
+            color: #FFFFFF;
+            top: 60px;
+            left: 240px;
+        }
+
+        .post .team-number-right {
+            position: absolute;
+            font-size: 50pt;
+            color: #FFFFFF;
+            top: 60px;
+            right: 240px;
+        }
+
         .post .bo {
             font: 25pt monospace;
             width: fit-content;
@@ -264,7 +280,7 @@
 </head>
 <body>
     <header>
-        <h1>CS:GO LIVE</h1>
+        <h1>CS:GO UPCOMING</h1>
         <div class="button-container" style="max-width: 983px;">
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
             <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
@@ -279,7 +295,7 @@
     <div class="button-container-news">
         <a href="{% url 'upcoming' %}" class="button">FUTURE</a>
         <a href="{% url 'live' %}" class="button">LIVE</a>
-        <a href="{% url 'played' %}" class="button">PLAYED</a>
+        <a href="" class="button">PLAYED</a>
     </div>
     <div class="container">
         {% for message in messages %}
@@ -297,54 +313,58 @@
             {% endfor %}
         {% for item in items %}
         <div class="post">
-            {% if not item.team_0.flag and not item.team_1.flag %}
+            <span class="team-number-left" style="color: {{ item.team_0.color }};">{{ item.team_0.score }}</span>
+            <span class="team-number-right" style="color: {{ item.team_1.color }};">{{ item.team_1.score }}</span>
+            {% if not item.teams_current.0.flag and not item.teams_current.1.flag %}
             <img src="{% static '/flag.png' %}" alt="" class="team-logo team-left">
             <img src="{% static '/flag.png' %}" alt="" class="team-logo team-right">
-            {% elif not item.team_0.flag and item.team_1.flag%}
+            {% elif not item.teams_current.0.flag and item.teams_current.1.flag%}
             <img src="{% static '/flag.png' %}" alt="" class="team-logo team-left">
-            <img src="https://www.hltv.org{{ item.team_1.flag }}" alt="" class="team-logo team-right">
-            {% elif item.team_0.flag and not item.team_1.flag%}
-            <img src="https://www.hltv.org{{ item.team_0.flag }}" alt="" class="team-logo team-left">
+            <img src="https://www.hltv.org{{ item.teams_current.1.flag }}" alt="" class="team-logo team-right">
+            {% elif item.teams_current.0.flag and not item.teams_current.1.flag%}
+            <img src="https://www.hltv.org{{ item.teams_current.0.flag }}" alt="" class="team-logo team-left">
             <img src="{% static '/flag.png' %}" alt="" class="team-logo team-right">
-            {% elif item.team_0.flag and item.team_1.flag%}
-            <img src="https://www.hltv.org{{ item.team_0.flag }}" alt="" class="team-logo team-left">
-            <img src="https://www.hltv.org{{ item.team_1.flag }}" alt="" class="team-logo team-right">
+            {% elif item.teams_current.0.flag and item.teams_current.1.flag%}
+            <img src="https://www.hltv.org{{ item.teams_current.0.flag }}" alt="" class="team-logo team-left">
+            <img src="https://www.hltv.org{{ item.teams_current.1.flag }}" alt="" class="team-logo team-right">
             {% endif %}
+
             <p class="left-corner-text">
-                {% if item.team_0.team %}
-                {{ item.team_0.team.upper }}
+                {% if item.teams_current.0.team %}
+                {{ item.teams_current.0.team.upper }}
                 {% else %}
                 UNKNOWN
                 {% endif %}
             </p>
             <p class="right-corner-text">
-                {% if item.team_1.team %}
-                {{ item.team_1.team.upper }}
+                {% if item.teams_current.1.team %}
+                {{ item.teams_current.1.team.upper }}
                 {% else %}
                 UNKNOWN
                 {% endif %}
             </p>
-            {% if item.team_0.source and item.team_1.source %}
+
+            {% if item.teams_current.0.source and item.teams_current.1.source %}
             <h2>
-                <img src="{{ item.team_0.source }}" alt="">
+                <img src="{{ item.teams_current.0.source }}" alt="">
                 <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
-                <img src="{{ item.team_1.source }}" alt="">
+                <img src="{{ item.teams_current.1.source }}" alt="">
             </h2>
-            {% elif not item.team_0.source and not item.team_1.source %}
+            {% elif not item.teams_current.0.source and not item.teams_current.1.source %}
             <h2>
                 <img src="{% static '/not_found.png' %}" alt="">
                 <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
                 <img src="{% static '/not_found.png' %}" alt="">
             </h2>
-            {% elif not item.team_0.source %}
+            {% elif not item.teams_current.0.source %}
             <h2>
                 <img src="{% static '/not_found.png' %}" alt="">
                 <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
-                <img src="{{ item.team_1.source }}" alt="">
+                <img src="{{ item.teams_current.1.source }}" alt="">
             </h2>
-            {% elif not item.team_1.source %}
+            {% elif not item.teams_current.1.source %}
             <h2>
-                <img src="{{ item.team_0.source }}" alt="">
+                <img src="{{ item.teams_current.0.source }}" alt="">
                 <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
                 <img src="{% static '/not_found.png' %}" alt="">
             </h2>
@@ -366,7 +386,7 @@
         {% for num in page_obj.paginator.page_range %}
             {% if num == page_obj.number %}
                 <span class="page-link active">{{ num }}</span>
-            {% else %}
+            {% elif num >= page_obj.number|add:-2 and num <= page_obj.number|add:2  %}
                 <a href="?page={{ num }}" class="page-link">{{ num }}</a>
             {% endif %}
         {% endfor %}
@@ -375,7 +395,7 @@
             <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next</a>
             <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">Last</a>
         {% endif %}
-    </div>   
+    </div>
 </body>
 <footer>
     {{ date }}

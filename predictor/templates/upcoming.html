@@ -252,6 +252,14 @@
             background-color: #111;
             color: #fff;
         }
+
+        .post .bo {
+            font: 25pt monospace;
+            width: fit-content;
+            text-align: center;
+            margin: -60px auto 0;
+            border: 2px solid rgb(113, 0, 128);
+        }
     </style>
 </head>
 <body>
@@ -271,6 +279,7 @@
     <div class="button-container-news">
         <a href="{% url 'upcoming' %}" class="button">FUTURE</a>
         <a href="{% url 'live' %}" class="button">LIVE</a>
+        <a href="{% url 'played' %}" class="button">PLAYED</a>
     </div>
     <div class="container">
         {% for message in messages %}
@@ -344,6 +353,7 @@
             <a href="https://www.hltv.org{{ item.match_link }}" class="button" style="margin-right: 10px;">HLTV</a>
             <a href="" class="button" style="margin: 0 10px;">STATS</a>
             <p class="time">{{ item.start_time }}</p>
+            <p class="bo">BO<span style="color: rgb(113, 0, 128);">{{ item.bo }}</span></p>
         </div>
         {% endfor %}
     </div>
@@ -356,7 +366,7 @@
         {% for num in page_obj.paginator.page_range %}
             {% if num == page_obj.number %}
                 <span class="page-link active">{{ num }}</span>
-            {% else %}
+            {% elif num >= page_obj.number|add:-2 and num <= page_obj.number|add:2  %}
                 <a href="?page={{ num }}" class="page-link">{{ num }}</a>
             {% endif %}
         {% endfor %}
@@ -365,7 +375,7 @@
             <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next</a>
             <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">Last</a>
         {% endif %}
-    </div>   
+    </div>
 </body>
 <footer>
     {{ date }}

@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import Optional
 
 from decouple import config
@@ -33,6 +34,7 @@ def get_upcoming_events():
     if not all_events:
         return
     for events in all_events:
+        events['start_time'] = events['start_time'][:-3]
         for index, event in enumerate(events['teams']):
             events[f'team_{index}'] = events['teams'][event]
             if events[f'team_{index}']['source'] == '/img/static/team/placeholder.svg':
@@ -44,11 +46,62 @@ def get_live_events():
     if not all_events:
         return
     for events in all_events:
+        events['start_time'] = events['start_time'][:-3]
         for index, event in enumerate(events['teams']):
             events[f'team_{index}'] = events['teams'][event]
             if events[f'team_{index}']['source'] == '/img/static/team/placeholder.svg':
                 events[f'team_{index}']['source'] = ''
     return all_events
+
+def get_played_events():
+    all_events = list(connect('parsed_data', 'all_played').find({'total_score': {'$ne': None}}).sort('timestamp', DESCENDING))
+    if not all_events:
+        return
+    for index, events in enumerate(all_events):
+        events['start_time'] = events['start_time'][:-3]
+        if events['teams']:
+            for index, item in enumerate(events['teams']):
+                if events['teams'][item]['team'] == events['teams_current'][str(index)]:
+                    events['teams_current'][str(index)] = {
+                        'source': events['teams'][item]['source'],
+                        'flag': events['teams'][item]['flag'],
+                        'team': events['teams_current'][str(index)]
+                    }
+        for item in events['teams_current']:
+            if events['teams_current'][item]['source'] == '/img/static/team/placeholder.svg':
+                events['teams_current'][item]['source'] = ''
+        event_checker_all_played(events)
+    return all_events
+
+def event_checker_all_played(events: dict):
+    if not events['total_score'].get('score'):
+        events['total_score']['score'] = [0, 0]
+        events['total_score']['score'][events['total_score']['winner']] = 1
+
+    if not events['teams']:
+        for index, score in enumerate(events['total_score']['score']):
+            events[f'team_{index}'] = {'color': 'red', 'score': score}
+            if events['total_score']['winner'] == index:
+                events[f'team_{index}']['color'] = 'green'
+        return
+
+    for index, event in enumerate(events['teams']):
+        events[f'team_{index}'] = events['teams'][event]
+        if events[f'team_{index}']['source'] == '/img/static/team/placeholder.svg':
+            events[f'team_{index}']['source'] = ''
+
+        if not events['total_score'].get('score'):
+            events[f'team_{index}'] = {'score': 0, 'color': 'red'}
+            if events['total_score']['winner'] == index:
+                events[f'team_{index}']['score'] = 1
+                events[f'team_{index}']['color'] = 'green'
+            continue
+
+        events[f'team_{index}']['score'] = events['total_score']['score'][index]
+        if events['total_score']['winner'] == index:
+            events[f'team_{index}']['color'] = 'green'
+        else:
+            events[f'team_{index}']['color'] = 'red'
 
 def get_user_favourites(username: str, email: str, category: str):
     connect_ = connect('django_data', 'auth_user')
@@ -64,6 +117,10 @@ def get_user_favourites(username: str, email: str, category: str):
         found = connect('parsed_data', collection).aggregate(
             [{'$match': {'match_id': {'$in': favourites['favourites'][category]}}}]
         )
+        if collection == 'all_played':
+            found = list(found)
+            for event in found:
+                event_checker_all_played(event)
         results.extend(found)
         found_ids.update(match['match_id'] for match in results)
 
@@ -82,6 +139,7 @@ def get_user_favourites(username: str, email: str, category: str):
                     f'{category} ({username}, {email})')
 
     for events in results:
+        events['start_time'] = events['start_time'][:-3]
         for index, event in enumerate(events['teams']):
             events[f'team_{index}'] = events['teams'][event]
             if events[f'team_{index}']['source'] == '/img/static/team/placeholder.svg':
@@ -116,7 +174,7 @@ def updating_favourites(username: str, email: str, category: str, match_id: int)
     if match_id in favourites['favourites'][category]:
         return False, 'Already Added'
     
-    if len(favourites['favourites'][category]) > 30:
+    if len(favourites['favourites'][category]) >= 30:
         return False, f'Limit 30 For {category.capitalize()} Matches'
 
     favourites['favourites'][category].insert(0, match_id)
