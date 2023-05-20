@@ -339,6 +339,7 @@ async def hltv_updating_live(current_time: str, html):
     live_matches = html.find(class_='liveMatchesContainer')
     if not live_matches:
         logger.info('No live matches')
+        await hltv_delete_live(current_time)
         return
     live_matches = live_matches.find(class_='liveMatches').find_all(class_='liveMatch-container')
     for match in tqdm(live_matches):
@@ -392,9 +393,9 @@ async def hltv_match_info(match_link: str):
     result = {'teams': {}}
     for index, team in enumerate(teams):
         team_id = team.find('a')
-        if not team_id.find('img') or not team.find('img'):
-            source = 'unknown.png'
-            flag = 'unknown.png'
+        if not team_id or not team_id.find('img') or not team.find('img'):
+            source = ''
+            flag = ''
         else:
             source = team_id.find('img')['src']
             flag = team.find('img')['src']
