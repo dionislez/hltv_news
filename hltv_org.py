@@ -449,15 +449,20 @@ async def hltv_match_score_total(match_link: str):
 
     if not players and mapholders:
         mapholder = mapholders.find_all(class_='mapholder')[0]
-        default_ = mapholder.find(class_='map-name-holder').find('img')['alt']
-        if default_ == 'Default':
-            results = mapholder.find(class_='results played')
-            team_0 = results.find(class_='results-left')['class']
-            team_1 = results.find(class_='results-right')['class']
-            if team_0[1] == 'won':
-                return {'total_score': {'winner': 0}}
-            return {'total_score': {'winner': 1}}
-        return
+        # default_ = mapholder.find(class_='map-name-holder').find('img')['alt']
+        # if default_ == 'Default':
+        #     results = mapholder.find(class_='results played')
+        #     team_0 = results.find(class_='results-left')['class']
+        #     team_1 = results.find(class_='results-right')['class']
+        #     if team_0[1] == 'won':
+        #         return {'total_score': {'winner': 0}}
+        #     return {'total_score': {'winner': 1}}
+        results = mapholder.find(class_='results played')
+        team_0 = results.find(class_='results-left')['class']
+        team_1 = results.find(class_='results-right')['class']
+        if team_0[1] == 'won':
+            return {'total_score': {'winner': 0}}
+        return {'total_score': {'winner': 1}}
     if not mapholders or not players:
         return
 
