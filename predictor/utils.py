@@ -147,6 +147,22 @@ def get_user_favourites(username: str, email: str, category: str):
 
     return results
 
+def get_match_stats(match_id: int, collection: str):
+    match_stats = connect('parsed_data', collection).find_one({'match_id': match_id}, {'_id': 0})
+    if not match_stats:
+        return
+    data = {'bo': match_stats['bo']}
+    for index, team in enumerate(match_stats['teams']):
+        data[f'team_{index}'] = {'team_id': team,
+                                 'team': match_stats['teams'][team]['team'],
+                                 'flag': match_stats['teams'][team]['flag'],
+                                 'source': match_stats['teams'][team]['source'],
+                                 'players': match_stats['teams'][team]['players'],
+                                 'past_matches': match_stats['teams'][team]['past_matches']}
+        if match_stats['teams'][team]['source'] == '/img/static/team/placeholder.svg':
+            data[f'team_{index}']['source'] = ''
+    return data
+
 def updating_favourites(username: str, email: str, category: str, match_id: int):
     connect_ = connect('django_data', 'auth_user')
     favourites = connect_.find_one(

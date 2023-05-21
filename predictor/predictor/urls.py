@@ -9,4 +9,5 @@ urlpatterns = [
     path('', include('app_upcoming.urls')),
     path('', include('app_news.urls')),
     path('', include('app_favourites.urls')),
+    path('', include('app_stats.urls')),
 ]

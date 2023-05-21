@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CS:GO STATS</title>
+    <style>
+        body {
+            background-color: #1E1E1E;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .button-container {
+            display: flex;
+            margin: 0 auto;
+            padding: 20px 0px 0px;
+        }
+
+        .button-container .button {
+            border-radius: 8%;
+            flex-grow: 1;
+            margin: 0 20px;
+            background-color: #282828;
+            border: 3px solid rgb(113, 0, 128);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            float: right;
+            transition: transform 0.2s;
+        }
+
+        .button-container .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(113, 0, 128);
+        }
+
+        h1 {
+            font: 44px sans-serif;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        footer {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        .user-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .user-button .button {
+            background-color: #333333;
+            border: 3px solid rgb(255, 0, 0);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            transition: transform 0.2s;
+        }
+
+        .user-button .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(255, 0, 0);
+        }
+
+        .post {
+            background-color: transparent;
+            border-radius: 5px;
+            font: 12pt monospace;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            overflow: hidden;
+            display: flex;
+
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .post .center-text {
+            font-size: 25px;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .left-half {
+            flex-basis: 50%;
+            background-color: #282828;
+        }
+
+        .right-half {
+            flex-basis: 50%;
+            background-color: #333333;
+        }
+
+        .left-images {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .right-images {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .left-images .image-container,
+        .right-images .image-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .left-images .image-container p {
+            margin-left: 10px;
+            font-size: 14px;
+            color: #FFFFFF;
+        }
+        .right-images .image-container p {
+            margin-right: 10px;
+            font-size: 14px;
+            color: #FFFFFF;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .tooltip::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            font-size: 12px;
+            padding: 5px;
+            border-radius: 5px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            white-space: nowrap;
+        }
+
+        .tooltip:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CS:GO STATS</h1>
+        <div class="button-container" style="max-width: 983px;">
+            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
+            <a href="{% url 'actual_news' %}" class="button">MATCHES</a>
+            <a href="{% url 'actual_news' %}" class="button">PLAYERS</a>
+            <a href="{% url 'user_fav_upcoming' %}" class="button">FAVOURITES</a>
+        </div>
+        <div class="user-button">
+            <a href="{% url 'home' %}" class="button">ACCOUNT</a>
+        </div>
+    </header>
+    <div class="container">
+        <div class="post">
+        <div class="left-half">
+            <div class="left-images">
+                {% if items.team_0.flag %}
+                <img src="https://www.hltv.org{{ items.team_0.flag }}" alt="" style="width: 30px; height: 20px; margin-top: 5px; margin-left: 5px;">
+                {% else %}
+                <img src="{% static '/flag.png' %}" alt="" style="width: 30px; height: 20px; margin-top: 5px; margin-left: 5px;">
+                {% endif %}
+
+                <div style="display: flex; align-items: center; margin-left: 10px; font-size: 25px; text-decoration: underline; text-decoration-color: rgb(113, 0, 128);">
+                    <p>{{ items.team_0.team.upper }}</p>
+                    {% if items.team_0.source %}
+                    <img src="{{ items.team_0.source }}" alt="" style="width: 100px; height: 100px; margin-left: 10px;">
+                    {% else %}
+                    <img src="{% static 'not_found.png' %}" alt="" style="width: 100px; height: 100px; margin-left: 10px;">
+                    {% endif %}
+                </div>
+
+                {% for id, item in items.team_0.players.items %}
+                    <div style="margin-left: 10px; font-size: 20px; text-decoration: underline; text-decoration-color: rgb(113, 0, 128)">
+                        <p>{{ item.nickname.upper }}</p>
+                    </div>
+                    <div class="image-container">
+                        {% if item.playerPictureUrl %}
+                            <img src="{{ item.playerPictureUrl }}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
+                        {% else %}
+                            <img src="{% static '/not_found.png' %}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
+                        {% endif %}
+                        <div>
+                            <p class="tooltip" data-tooltip="RATING: {{ item.rating }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.rating }}
+                            </p>
+                            <p class="tooltip" data-tooltip="KPR: {{ item.kpr }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.kpr }}
+                            </p>
+                            <p class="tooltip" data-tooltip="DPR: {{ item.dpr }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.dpr }}
+                            </p>
+                            <p class="tooltip" data-tooltip="KAST: {{ item.kast }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.kast }}
+                            </p>
+                            <p class="tooltip" data-tooltip="IMPACT: {{ item.impact }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.impact }}
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="center-text">
+            <h2>BO<span style="color: rgb(113, 0, 128);">{{ items.bo }}</span></h2>
+        </div>
+        <div class="right-half">
+            <div class="right-images">
+                {% if items.team_1.flag %}
+                <img src="https://www.hltv.org{{ items.team_1.flag }}" alt="" style="width: 30px; height: 20px; margin-top: 5px; margin-right: 5px;">
+                {% else %}
+                <img src="{% static '/flag.png' %}" alt="" style="width: 30px; height: 20px; margin-top: 5px; margin-right: 5px;">
+                {% endif %}
+
+                <div style="display: flex; align-items: center; margin-right: 10px; font-size: 25px; text-decoration: underline; text-decoration-color: rgb(113, 0, 128);">
+                    {% if items.team_1.source %}
+                    <img src="{{ items.team_1.source }}" alt="" style="width: 100px; height: 100px; margin-right: 10px;">
+                    {% else %}
+                    <img src="{% static 'not_found.png' %}" alt="" style="width: 100px; height: 100px; margin-right: 10px;">
+                    {% endif %}
+                    <p>{{ items.team_1.team.upper }}</p>
+                </div>
+
+                {% for id, item in items.team_1.players.items %}
+                    <div style="margin-right: 10px; font-size: 20px; text-decoration: underline; text-decoration-color: rgb(113, 0, 128)">
+                        <p>{{ item.nickname.upper }}</p>
+                    </div>
+                    <div class="image-container">
+                        <div>
+                            <p class="tooltip" data-tooltip="RATING: {{ item.rating }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.rating }}
+                            </p>
+                            <p class="tooltip" data-tooltip="KPR: {{ item.kpr }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.kpr }}
+                            </p>
+                            <p class="tooltip" data-tooltip="DPR: {{ item.dpr }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.dpr }}
+                            </p>
+                            <p class="tooltip" data-tooltip="KAST: {{ item.kast }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.kast }}
+                            </p>
+                            <p class="tooltip" data-tooltip="IMPACT: {{ item.impact }}" style="font-size: 15px; border: 3px solid rgb(113, 0, 128);">
+                                {{ item.impact }}
+                            </p>
+                        </div>
+                        {% if item.playerPictureUrl %}
+                            <img src="{{ item.playerPictureUrl }}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
+                        {% else %}
+                            <img src="{% static '/not_found.png' %}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        </div>
+    </div>
+</body>
+<footer>
+    {{ date }}
+</footer>
+</html>

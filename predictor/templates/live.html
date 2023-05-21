@@ -351,7 +351,7 @@
             {% endif %}
             <a href="{% url 'favorites' item.match_id %}" class="button star" style="background-color: 333333; color: white;">&#9733;</a>
             <a href="https://www.hltv.org{{ item.match_link }}" class="button" style="margin-right: 10px;">HLTV</a>
-            <a href="" class="button" style="margin: 0 10px;">STATS</a>
+            <a href="{% url 'stats_players_live' item.match_id %}" target="_blank" class="button" style="margin: 0 10px;">STATS</a>
             <p class="time">{{ item.start_time }}</p>
             <p class="bo">BO<span style="color: rgb(113, 0, 128);">{{ item.bo }}</span></p>
         </div>

@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'app_news',
     'app_register',
     'app_upcoming',
-    'app_favourites'
+    'app_favourites',
+    'app_stats'
 ]
 
 MIDDLEWARE = [
