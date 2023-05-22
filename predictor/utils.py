@@ -151,7 +151,7 @@ def get_match_stats(match_id: int, collection: str):
     match_stats = connect('parsed_data', collection).find_one({'match_id': match_id}, {'_id': 0})
     if not match_stats:
         return
-    data = {'bo': match_stats['bo']}
+    data = {'bo': match_stats['bo'], 'overview_data' : {}}
     for index, team in enumerate(match_stats['teams']):
         data[f'team_{index}'] = {'team_id': team,
                                  'team': match_stats['teams'][team]['team'],
@@ -161,7 +161,39 @@ def get_match_stats(match_id: int, collection: str):
                                  'past_matches': match_stats['teams'][team]['past_matches']}
         if match_stats['teams'][team]['source'] == '/img/static/team/placeholder.svg':
             data[f'team_{index}']['source'] = ''
+        for player in data[f'team_{index}']['players']:
+            overview_data = get_overview_data(player)
+            overview_data.update(get_career_data(player))
+            data['overview_data'][player] = overview_data
     return data
+
+def get_overview_data(player_id: str):
+    graph_data = connect('parsed_data', 'overview_data').find_one(
+        {'player_id': player_id},
+        {'_id': 0, 'data': 1}
+    )
+    labels, ratings = [], []
+    if not graph_data:
+        return {'labels': labels, 'data': ratings}
+    for element in graph_data['data']:
+        if element['label'] not in labels and element['value']:
+            labels.append(element['label'])
+            ratings.append(float(element['value']))
+    return {'labels': labels, 'data': ratings}
+
+def get_career_data(player_id: str):
+    graph_data = connect('parsed_data', 'all_players').find_one(
+        {'player_id': player_id},
+        {'_id': 0, 'career': 1}
+    )
+    labels, career = [], []
+    if not graph_data:
+        return {'labels_2': labels, 'data_2': career}
+    for element in graph_data['career']:
+        for type in graph_data['career'][element]:
+            labels.append(f'{element} {type.upper()}')
+            career.append(graph_data['career'][element][type])
+    return {'labels_2': labels, 'data_2': career}
 
 def updating_favourites(username: str, email: str, category: str, match_id: int):
     connect_ = connect('django_data', 'auth_user')

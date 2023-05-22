@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from django.http import HttpRequest
@@ -51,4 +52,5 @@ def stats_players(request: HttpRequest, match_id: int):
         match_teams['team_0'] = {'players': no_pictures}
         match_teams['team_1'] = {'players': no_pictures}
     context = {'items': match_teams, 'date': datetime.utcnow().date}
+    context['overview_data'] = json.dumps(match_teams['overview_data'])
     return render(request, 'stats_players.html', context)

@@ -179,9 +179,52 @@
             opacity: 1;
             visibility: visible;
         }
+
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <canvas id="myChart"></canvas>
+        </div>
+    </div>
     <header>
         <h1>CS:GO STATS</h1>
         <div class="button-container" style="max-width: 983px;">
@@ -215,8 +258,28 @@
                 </div>
 
                 {% for id, item in items.team_0.players.items %}
-                    <div style="margin-left: 10px; font-size: 20px; text-decoration: underline; text-decoration-color: rgb(113, 0, 128)">
-                        <p>{{ item.nickname.upper }}</p>
+                    <div style="margin-left: 10px; font-size: 20px;">
+                        <p>
+                            <button onclick="openModal(this)" data-value="{{ id }}" style="border-radius: 8%; background-color: #333333; color: #FFFFFF;">
+                                RATING
+                                <style>
+                                    button:hover {
+                                        transform: translateY(-2px);
+                                    }
+                                </style>
+                            </button>
+
+                            <button onclick="openModal2(this)" data-value="{{ id }}" style="border-radius: 8%; background-color: #333333; color: #FFFFFF;">
+                                CAREER
+                                <style>
+                                    button:hover {
+                                        transform: translateY(-2px);
+                                    }
+                                </style>
+                            </button>
+
+                            <span>{{ item.nickname.upper }}</span>
+                        </p>
                     </div>
                     <div class="image-container">
                         {% if item.playerPictureUrl %}
@@ -266,8 +329,27 @@
                 </div>
 
                 {% for id, item in items.team_1.players.items %}
-                    <div style="margin-right: 10px; font-size: 20px; text-decoration: underline; text-decoration-color: rgb(113, 0, 128)">
-                        <p>{{ item.nickname.upper }}</p>
+                    <div style="margin-right: 10px; font-size: 20px;">
+                        <p>
+                            <span>{{ item.nickname.upper }}</span>
+                            <button onclick="openModal(this)" data-value="{{ id }}" style="border-radius: 8%; background-color: #333333; color: #FFFFFF;">
+                                RATING
+                                <style>
+                                    button:hover {
+                                        transform: translateY(-2px);
+                                    }
+                                </style>
+                            </button>
+
+                            <button onclick="openModal2(this)" data-value="{{ id }}" style="border-radius: 8%; background-color: #333333; color: #FFFFFF;">
+                                CAREER
+                                <style>
+                                    button:hover {
+                                        transform: translateY(-2px);
+                                    }
+                                </style>
+                            </button>
+                        </p>
                     </div>
                     <div class="image-container">
                         <div>
@@ -298,6 +380,59 @@
         </div>
         </div>
     </div>
+    <script>
+        var modal = document.getElementById("myModal");
+        var closeButton = document.getElementsByClassName("close")[0];
+        function openModal(button) {
+            var buttonValue = button.getAttribute("data-value");
+            var graph_data = JSON.parse('{{ overview_data|escapejs|safe }}');
+            myChart.data.datasets[0].data = graph_data[buttonValue].data;
+            myChart.data.labels = graph_data[buttonValue].labels;
+            myChart.config.type = "line";
+            myChart.update();
+            modal.style.display = "block";
+        }
+        function openModal2(button) {
+            var buttonValue = button.getAttribute("data-value");
+            var graph_data = JSON.parse('{{ overview_data|escapejs|safe }}');
+            myChart.data.datasets[0].data = graph_data[buttonValue].data_2;
+            myChart.data.labels = graph_data[buttonValue].labels_2;
+            myChart.data.datasets[0].label = "CAREER";
+            myChart.config.type = "bar";
+            myChart.update();
+            modal.style.display = "block";
+        }
+        function closeModal() {
+            modal.style.display = "none";
+        }
+        closeButton.addEventListener("click", closeModal);
+        window.addEventListener("click", function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <script>
+        let ctx = document.querySelector('#myChart').getContext('2d');
+        ctx.canvas.parentNode.style.height = '400px';
+        ctx.canvas.parentNode.style.width = '800px';
+        let myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'RATING',
+                    data: [],
+                    backgroundColor: ['white'],
+                    borderWidth: 4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+            }
+        })
+    </script>
 </body>
 <footer>
     {{ date }}
