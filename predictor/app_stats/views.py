@@ -13,7 +13,9 @@ def stats_players(request: HttpRequest, match_id: int):
 
     collections = {
         'stats_players_upcomig': 'upcoming',
-        'stats_players_live': 'live'
+        'stats_players_live': 'live',
+        'stats_players_played': 'all_played',
+        'stats_players_fav': 'all'
     }
     match_teams = get_match_stats(match_id, collections[request.resolver_match.url_name])
     if not match_teams:

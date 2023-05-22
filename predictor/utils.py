@@ -148,7 +148,14 @@ def get_user_favourites(username: str, email: str, category: str):
     return results
 
 def get_match_stats(match_id: int, collection: str):
-    match_stats = connect('parsed_data', collection).find_one({'match_id': match_id}, {'_id': 0})
+    if collection == 'all':
+        match_stats = None
+        for collection in ['all_played', 'upcoming', 'live']:
+            match_stats = connect('parsed_data', collection).find_one({'match_id': match_id}, {'_id': 0})
+            if match_stats:
+                break
+    else:
+        match_stats = connect('parsed_data', collection).find_one({'match_id': match_id}, {'_id': 0})
     if not match_stats:
         return
     data = {'bo': match_stats['bo'], 'overview_data' : {}}
@@ -161,10 +168,16 @@ def get_match_stats(match_id: int, collection: str):
                                  'past_matches': match_stats['teams'][team]['past_matches']}
         if match_stats['teams'][team]['source'] == '/img/static/team/placeholder.svg':
             data[f'team_{index}']['source'] = ''
+        if not data[f'team_{index}']['players']:
+            continue
         for player in data[f'team_{index}']['players']:
             overview_data = get_overview_data(player)
             overview_data.update(get_career_data(player))
             data['overview_data'][player] = overview_data
+
+    if not match_stats['teams'] and match_stats.get('teams_current'):
+        for item in match_stats['teams_current']:
+            data[f'team_{item}'] = match_stats['teams_current'][item]
     return data
 
 def get_overview_data(player_id: str):
