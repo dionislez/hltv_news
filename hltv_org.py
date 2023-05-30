@@ -1,8 +1,8 @@
 import asyncio
 import json
+import re
 from asyncio import TimeoutError
 from datetime import datetime, timedelta
-from pprint import pprint
 
 import aiohttp
 from aiohttp.client_exceptions import ClientOSError, ServerDisconnectedError
@@ -13,7 +13,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
 
-from database import hltv_delete_live, hltv_delete_upcoming, hltv_update_live, hltv_update_upcoming, htlv_all_players_update
+from database import (hltv_delete_live, hltv_delete_upcoming, hltv_update_live,
+                      hltv_update_upcoming, htlv_all_players_update)
 from formetters.players_format import (hltv_career_check,
                                        html_individual_check,
                                        html_overview_check)
@@ -547,3 +548,17 @@ async def hltv_teams_check_played(match_link: str):
             name = src['alt'].lower()
         data['teams_current'][str(index)] = {'flag': flag, 'source': source, 'team': name}
     return data
+
+async def hltv_team_rating(team_id: str):
+    html = await hltv_get_html(config('stats_all_teams'))
+    all_teams = html.find(class_='stats-table player-ratings-table').find('tbody').find_all('tr')
+    for team in all_teams:
+        tds = team.find_all('td')
+        for td in tds:
+            if td['class'][0] == 'teamCol-teams-overview':
+                href = td.find('a')['href']
+                if re.findall(r"\b" + re.escape(team_id) + r"\b", href, re.IGNORECASE):
+                    return float(tds[4].text)
+
+if __name__ == '__main__':
+    print(asyncio.run(hltv_team_rating('1226011')))

@@ -95,6 +95,15 @@ async def hltv_get_teams():
         ).to_list(length=None)
     return teams
 
+async def hltv_get_team(team_id: str):
+    async with await client.start_session() as session:
+        team = await db['all_teams'].find_one(
+            {'team_id': team_id},
+            projection={'_id': 0},
+            session=session
+        )
+    return team
+
 async def hltv_players_update(overview: dict, graph_data: dict):
     async with await client.start_session() as session:
         await db['all_players'].find_one_and_update(
@@ -143,9 +152,6 @@ async def hltv_get_upcoming():
             {},
             {
                 '_id': 0,
-                'timestamp': 0,
-                'start_time': 0,
-                'bo': 0
             },
             session=session
         ).to_list(length=None)

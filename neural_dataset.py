@@ -32,7 +32,7 @@ async def main():
         if not event['teams']:
             continue
 
-        for team in tqdm(event['teams'], 'Upcoming teams'):
+        for team in event['teams']:
             if not event['teams'][team]:
                 continue
 

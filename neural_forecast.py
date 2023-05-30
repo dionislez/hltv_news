@@ -8,28 +8,33 @@ from joblib import dump, load
 from loguru import logger
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.neural_network import MLPClassifier
+from tqdm import tqdm
 
-from database import hltv_get_team, hltv_get_upcoming
+from database import hltv_get_team, hltv_get_upcoming, hltv_update_upcoming
+from hltv_org import hltv_team_rating
 
 
 async def upcoming_data():
-    matches = (await hltv_get_upcoming())[0:1]
-    team_names = []
-    for match in matches:
+    matches = await hltv_get_upcoming()
+    for match in tqdm(matches, 'Upcoming forecasts'):
         if not match.get('teams') or not match['teams']:
             continue
-        prediction_data = []
+        prediction_data, team_names = [], []
         _ids = list(match['teams'].keys())
 
         for index, team in enumerate(match['teams']):
             team_stats = []
             team_names.append(match['teams'][team]['team'])
-            rating_team = (await hltv_get_team(_ids[index]))['rating']
+            
+            rating_team = await get_team_rating(_ids[index])
 
             if index == 0:
-                rating_opponent = (await hltv_get_team(_ids[1]))['rating']
+                rating_opponent = await get_team_rating(_ids[1])
             elif index == 1:
-                rating_opponent = (await hltv_get_team(_ids[0]))['rating']
+                rating_opponent = await get_team_rating(_ids[0])
+
+            if not rating_team or not rating_opponent:
+                break
 
             for stats in match['teams'][team]['players']:
                 try:
@@ -43,12 +48,19 @@ async def upcoming_data():
 
             prediction_data.append(team_stats)
 
-        if not prediction_data[0] or not prediction_data[1]:
-            print({'prediction': {}})
-            return
+        if len(prediction_data) != 2 or not prediction_data[0] or not prediction_data[1]:
+            await hltv_update_upcoming({'prediction': {}, 'match_id': match['match_id']})
+            continue
 
         prediction_result = await neural_network(prediction_data, team_names)
-        print(prediction_result)
+        prediction_result['match_id'] = match['match_id']
+        await hltv_update_upcoming(prediction_result)
+
+async def get_team_rating(team_id: str):
+    team_info = await hltv_get_team(team_id)
+    if team_info:
+        return team_info['rating']
+    return await hltv_team_rating(team_id)
 
 async def neural_network(prediction_data, team_names):
     clf = await model()
@@ -56,13 +68,17 @@ async def neural_network(prediction_data, team_names):
     predictions1 = clf.predict_proba(prediction_data[0])
     predictions2 = clf.predict_proba(prediction_data[1])
 
+    if not os.path.exists('./forecasts/graphs'):
+        os.mkdir('./forecasts/graphs')
+
     plt.figure()
     plt.plot(predictions1[:, 1], label=team_names[0])
     plt.plot(predictions2[:, 1], label=team_names[1])
     plt.xlabel('Номер образца')
     plt.ylabel('Вероятность победы')
     plt.legend()
-    plt.savefig(f'./forecasts/{team_names[0]}_{team_names[1]}.png')
+    plt.savefig(f'./forecasts/graphs/{team_names[0]}_{team_names[1]}.png')
+    plt.close()
 
     win_prob_1 = predictions1[:, 1].mean()
     win_prob_2 = predictions2[:, 1].mean()
