@@ -219,6 +219,33 @@
             text-decoration: none;
             cursor: pointer;
         }
+
+        .table-wrapper {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .button-link {
+            color: #000000;
+            text-decoration: none;
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #ffffff;
+        }
     </style>
 </head>
 <body>
@@ -232,15 +259,16 @@
         <h1>CS:GO STATS</h1>
         <div class="button-container" style="max-width: 983px;">
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
-            <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
-            <a href="{% url 'actual_news' %}" class="button">MATCHES</a>
-            <a href="{% url 'actual_news' %}" class="button">PLAYERS</a>
+            <a href="{% url 'upcoming' %}" class="button">MATCHES</a>
+            <a href="{% url 'all_teams' %}" class="button">TEAMS</a>
+            <a href="{% url 'all_players' %}" class="button">PLAYERS</a>
             <a href="{% url 'user_fav_upcoming' %}" class="button">FAVOURITES</a>
         </div>
         <div class="user-button">
             <a href="{% url 'home' %}" class="button">ACCOUNT</a>
         </div>
     </header>
+
     <div class="container">
         <div class="post">
         <div class="left-half">
@@ -286,7 +314,10 @@
                     </div>
                     <div class="image-container">
                         {% if item.playerPictureUrl %}
-                            <img src="{{ item.playerPictureUrl }}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
+                            <a href="https://www.hltv.org{{ item.profileLinkUrl }}" target="_blank">
+                                <img src="{{ item.playerPictureUrl }}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
+                            </a>
+                            
                         {% else %}
                             <img src="{% static '/not_found.png' %}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
                         {% endif %}
@@ -309,6 +340,45 @@
                         </div>
                     </div>
                 {% endfor %}
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                      <tr>
+                        <th style="color: black;">Opponent</th>
+                        <th style="color: black;">Score</th>
+                        <th style="color: black;">Result</th>
+                        <th style="color: black;">Link</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for item in items.team_0.past_matches %}
+                      {% if item.score %}
+                      <tr>
+                          <td>{{ item.opponent }}</td>
+                          <td>{{ item.score }}</td>
+                          <td>{{ item.result }}</td>
+                          <td>
+                              <a href="https://www.hltv.org{{ item.link }}" target="_blank" class="button-link">
+                                  HLTV
+                              </a>
+                          </td>
+                      </tr>
+                      {% else %}
+                      <tr>
+                          <td>{{ item.opponent }}</td>
+                          <td>{{ item.bo }}</td>
+                          <td>{{ item.result }}</td>
+                          <td>
+                              <a href="https://www.hltv.org{{ item.link }}" target="_blank" class="button-link">
+                                  HLTV
+                              </a>
+                          </td>
+                      </tr>
+                      {% endif %}
+                      {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
         <div class="center-text">
@@ -335,8 +405,9 @@
                     <div style="margin-right: 10px; font-size: 20px;">
                         <p>
                             <span>{{ item.nickname.upper }}</span>
-                            <button onclick="openModal(this)" data-value="{{ id }}" style="border-radius: 8%; background-color: #333333; color: #FFFFFF;">
-                                RATING
+
+                            <button onclick="openModal2(this)" data-value="{{ id }}" style="border-radius: 8%; background-color: #333333; color: #FFFFFF;">
+                                CAREER
                                 <style>
                                     button:hover {
                                         transform: translateY(-2px);
@@ -344,8 +415,8 @@
                                 </style>
                             </button>
 
-                            <button onclick="openModal2(this)" data-value="{{ id }}" style="border-radius: 8%; background-color: #333333; color: #FFFFFF;">
-                                CAREER
+                            <button onclick="openModal(this)" data-value="{{ id }}" style="border-radius: 8%; background-color: #333333; color: #FFFFFF;">
+                                RATING
                                 <style>
                                     button:hover {
                                         transform: translateY(-2px);
@@ -373,16 +444,58 @@
                             </p>
                         </div>
                         {% if item.playerPictureUrl %}
-                            <img src="{{ item.playerPictureUrl }}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
+                            <a href="https://www.hltv.org{{ item.profileLinkUrl }}" target="_blank">
+                                <img src="{{ item.playerPictureUrl }}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
+                            </a>
                         {% else %}
                             <img src="{% static '/not_found.png' %}" alt="" style="width: 150px; height: 150px; border: 3px solid rgb(113, 0, 128);">
                         {% endif %}
                     </div>
                 {% endfor %}
             </div>
+            <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="color: black;">Opponent</th>
+                      <th style="color: black;">Score</th>
+                      <th style="color: black;">Result</th>
+                      <th style="color: black;">Link</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in items.team_1.past_matches %}
+                    {% if item.score %}
+                    <tr>
+                        <td>{{ item.opponent }}</td>
+                        <td>{{ item.score }}</td>
+                        <td>{{ item.result }}</td>
+                        <td>
+                            <a href="https://www.hltv.org{{ item.link }}" target="_blank" class="button-link">
+                                HLTV
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td>{{ item.opponent }}</td>
+                        <td>{{ item.bo }}</td>
+                        <td>{{ item.result }}</td>
+                        <td>
+                            <a href="https://www.hltv.org{{ item.link }}" target="_blank" class="button-link">
+                                HLTV
+                            </a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+            </div>
         </div>
         </div>
     </div>
+
     <script>
         var modal = document.getElementById("myModal");
         var closeButton = document.getElementsByClassName("close")[0];

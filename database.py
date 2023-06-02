@@ -216,3 +216,32 @@ async def hltv_update_all_played(match_id: int, data: dict):
             upsert=True,
             session=session
         )
+
+async def get_all_matches():
+    find_ = {'prediction': {'$eq': None}}
+    result = []
+    async with await client.start_session() as session:
+        upcoming = await db['upcoming'].find(find_, {'_id': 0}, session=session).to_list(length=None)
+        for match in upcoming:
+            match['type'] = 'upcoming'
+        result.extend(upcoming)
+
+        live = await db['live'].find(find_, {'_id': 0}, session=session).to_list(length=None)
+        for match in live:
+            match['type'] = 'live'
+        result.extend(live)
+
+        played = await db['all_played'].find(find_, {'_id': 0}, session=session).to_list(length=None)
+        for match in played:
+            match['type'] = 'all_played'
+        result.extend(played)
+    return result
+
+async def update_all_matches(prediction: dict, match_id: int, collection: str):
+    async with await client.start_session() as session:
+        await db[collection].find_one_and_update(
+            {'match_id': match_id},
+            {'$set': prediction},
+            upsert=True,
+            session=session
+        )

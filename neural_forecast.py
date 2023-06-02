@@ -10,13 +10,13 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.neural_network import MLPClassifier
 from tqdm import tqdm
 
-from database import hltv_get_team, hltv_get_upcoming, hltv_update_upcoming
+from database import get_all_matches, hltv_get_team, update_all_matches
 from hltv_org import hltv_team_rating
 
 
 async def upcoming_data():
-    matches = await hltv_get_upcoming()
-    for match in tqdm(matches, 'Upcoming forecasts'):
+    matches = await get_all_matches()
+    for match in tqdm(matches, 'Forecasts'):
         if not match.get('teams') or not match['teams']:
             continue
         prediction_data, team_names = [], []
@@ -35,6 +35,9 @@ async def upcoming_data():
 
             if not rating_team or not rating_opponent:
                 break
+            
+            if not match['teams'][team]['players']:
+                match['teams'][team]['players'] = []
 
             for stats in match['teams'][team]['players']:
                 try:
@@ -49,12 +52,11 @@ async def upcoming_data():
             prediction_data.append(team_stats)
 
         if len(prediction_data) != 2 or not prediction_data[0] or not prediction_data[1]:
-            await hltv_update_upcoming({'prediction': {}, 'match_id': match['match_id']})
+            await update_all_matches({'prediction': {}}, match['match_id'], match['type'])
             continue
 
         prediction_result = await neural_network(prediction_data, team_names)
-        prediction_result['match_id'] = match['match_id']
-        await hltv_update_upcoming(prediction_result)
+        await update_all_matches(prediction_result, match['match_id'], match['type'])
 
 async def get_team_rating(team_id: str):
     team_info = await hltv_get_team(team_id)

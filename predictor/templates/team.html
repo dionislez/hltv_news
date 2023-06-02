@@ -1,0 +1,311 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% if not items %}
+    <title>CS:GO TEAMS</title>
+    {% else %}
+    <title>TEAM {{ items.team.upper }}</title>
+    {% endif %}
+    <style>
+        body {
+            background-color: #1E1E1E;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+        }
+
+        .button-container {
+            display: flex;
+            margin: 0 auto;
+            padding: 20px 0px 0px;
+        }
+
+        .button-container .button {
+            border-radius: 8%;
+            flex-grow: 1;
+            margin: 0 20px;
+            background-color: #282828;
+            border: 3px solid rgb(113, 0, 128);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            float: right;
+            transition: transform 0.2s;
+        }
+
+        .button-container .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(113, 0, 128);
+        }
+
+        h1 {
+            font: 44px sans-serif;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .post {
+            background-color: #282828;
+            border-radius: 5px;
+            font: 12pt monospace;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            overflow: hidden;
+            width: 40%;
+            margin: 0 10px;
+            margin-bottom: 20px;
+        }
+
+        .post:last-child {
+            flex-grow: 1;
+        }
+
+        footer {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        .user-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .user-button .button {
+            background-color: #333333;
+            border: 3px solid rgb(255, 0, 0);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            transition: transform 0.2s;
+        }
+
+        .user-button .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(255, 0, 0);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #FFFFFF;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #FFFFFF;
+            border-right: 1px solid #FFFFFF;
+        }
+
+        th {
+            background-color: #333333;
+            color: #FFFFFF;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr td:last-child {
+            border-right: none;
+        }
+
+        .post h2 {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .button-link {
+            color: #FFFFFF;
+            text-decoration: none;
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #333333;
+            border-radius: 3px;
+        }
+
+        img.map-image {
+            width: 100%;
+            height: auto;
+            max-width: 250px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        {% if items %}
+        <h1>TEAM {{ items.team.upper }}</h1>
+        {% else %}
+        <h1>CS:GO TEAMS</h1>
+        {% endif %}
+        <div class="button-container" style="max-width: 983px;">
+            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'upcoming' %}" class="button">MATCHES</a>
+            <a href="{% url 'all_teams' %}" class="button">TEAMS</a>
+            <a href="{% url 'all_players' %}" class="button">PLAYERS</a>
+            <a href="{% url 'user_fav_upcoming' %}" class="button">FAVOURITES</a>
+        </div>
+        <div class="user-button">
+            <a href="{% url 'home' %}" class="button">ACCOUNT</a>
+        </div>
+    </header>
+
+    <div class="container">
+        {% if items %}
+        <div class="post">
+            <h2>OVERVIEW</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>CATEGORIES</th>
+                        <th>STATS</th>
+                    </tr>
+                    <tr>
+                        <td>LOCATION</td>
+                        <td>{{ items.location }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOTAL KILLS</td>
+                        <td>{{ items.total_kills }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOTAL DEATHS</td>
+                        <td>{{ items.total_deaths }}</td>
+                    </tr>
+                    <tr>
+                        <td>KD RATIO</td>
+                        <td>{{ items.kd }}</td>
+                    </tr>
+                    <tr>
+                        <td>KD DIFFERENCE</td>
+                        <td>{{ items.kd_diff }}</td>
+                    </tr>
+                    <tr>
+                        <td>TEAM WINS</td>
+                        <td>{{ items.wins }}</td>
+                    </tr>
+                    <tr>
+                        <td>TEAM DRAWS</td>
+                        <td>{{ items.draws }}</td>
+                    </tr>
+                    <tr>
+                        <td>TEAM LOSSES</td>
+                        <td>{{ items.losses }}</td>
+                    </tr>
+                    <tr>
+                        <td>MAPS PLAYED</td>
+                        <td>{{ items.maps }}</td>
+                    </tr>
+                    <tr>
+                        <td>ROUNDS PLAYED</td>
+                        <td>{{ items.rounds_played }}</td>
+                    </tr>
+                    <tr>
+                        <td>RATING</td>
+                        <td>{{ items.rating }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="post">
+            <h2>PLAYERS</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>PLAYER ID</th>
+                        <th>NICKNAME</th>
+                    </tr>
+                    {% for player_id, item in items.teammates.items %}
+                    <tr>
+                        <td>{{ player_id }}</td>
+                        <td>
+                            <a href="{% url 'player_stats' player_id %}" target="_blank" class="button-link">
+                                {{ item.nikname.upper }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+        <div class="post">
+            <h2>MAPS STATS</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>PICTURE</th>
+                        <th>MAP</th>
+                        <th>WINS</th>
+                        <th>DRAWS</th>
+                        <th>LOSSES</th>
+                        <th>WIN RATE</th>
+                        <th>TOTAL ROUNDS</th>
+                        <th>ROUND WIN AFTER FK</th>
+                        <th>ROUND WIN AFTER FD</th>
+                    </tr>
+                    {% for map, item in items.maps_stats.items %}
+                    <tr>
+                        <td>
+                            <img src="https://www.hltv.org/img/static/maps/{{ map.lower }}.png" alt="" class="map-image">
+                        </td>
+                        <td>{{ map }}</td>
+                        <td>{{ item.wins_draws_losses.0 }}</td>
+                        <td>{{ item.wins_draws_losses.1 }}</td>
+                        <td>{{ item.wins_draws_losses.2 }}</td>
+                        <td>{{ item.win_perc }}%</td>
+                        <td>{{ item.win_rate }}</td>
+                        <td>{{ item.perc_first_k }}%</td>
+                        <td>{{ item.perc_first_d }}%</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not items %}
+        <div class="post">
+            <h2 style="text-align: center;">NOT FOUND</h2>
+        </div>
+        {% endif %}
+    </div>
+    <footer>
+        {{ date }}
+    </footer>
+</body>
+</html>

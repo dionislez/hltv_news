@@ -1,0 +1,418 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% if not items %}
+    <title>CS:GO PLAYERS</title>
+    {% else %}
+    <title>PLAYER {{ items.nickname.upper }}</title>
+    {% endif %}
+    <style>
+        body {
+            background-color: #1E1E1E;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+        }
+
+        .button-container {
+            display: flex;
+            margin: 0 auto;
+            padding: 20px 0px 0px;
+        }
+
+        .button-container .button {
+            border-radius: 8%;
+            flex-grow: 1;
+            margin: 0 20px;
+            background-color: #282828;
+            border: 3px solid rgb(113, 0, 128);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            float: right;
+            transition: transform 0.2s;
+        }
+
+        .button-container .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(113, 0, 128);
+        }
+
+        h1 {
+            font: 44px sans-serif;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .post {
+            background-color: #282828;
+            border-radius: 5px;
+            font: 12pt monospace;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            overflow: hidden;
+            width: 40%;
+            margin: 0 10px;
+            margin-bottom: 20px;
+        }
+
+        footer {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        .user-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .user-button .button {
+            background-color: #333333;
+            border: 3px solid rgb(255, 0, 0);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            transition: transform 0.2s;
+        }
+
+        .user-button .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(255, 0, 0);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #FFFFFF;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #FFFFFF;
+            border-right: 1px solid #FFFFFF;
+        }
+
+        th {
+            background-color: #333333;
+            color: #FFFFFF;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr td:last-child {
+            border-right: none;
+        }
+
+        .post h2 {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .button-link {
+            color: #FFFFFF;
+            text-decoration: none;
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #333333;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        {% if items %}
+        <h1>PLAYER {{ items.nickname.upper }}</h1>
+        {% else %}
+        <h1>CS:GO PLAYERS</h1>
+        {% endif %}
+        <div class="button-container" style="max-width: 983px;">
+            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'upcoming' %}" class="button">MATCHES</a>
+            <a href="{% url 'all_teams' %}" class="button">TEAMS</a>
+            <a href="{% url 'all_players' %}" class="button">PLAYERS</a>
+            <a href="{% url 'user_fav_upcoming' %}" class="button">FAVOURITES</a>
+        </div>
+        <div class="user-button">
+            <a href="{% url 'home' %}" class="button">ACCOUNT</a>
+        </div>
+    </header>
+
+    <div class="container">
+        {% if items %}
+        <div class="post">
+            <h2>ROUND STATS</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>ROUNDS</th>
+                        <th>KILLS</th>
+                    </tr>
+                    <tr>
+                        <td>0</td>
+                        <td>{{ items.0_k_rnds }}</td>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>{{ items.1_k_rnds }}</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>{{ items.2_k_rnds }}</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>{{ items.3_k_rnds }}</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>{{ items.4_k_rnds }}</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>{{ items.5_k_rnds }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="post">
+            <h2>OVERALL STATS</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>CATEGORIES</th>
+                        <th>STATS</th>
+                    </tr>
+                    <tr>
+                        <td>KILLS</td>
+                        <td>{{ items.total_kills }}</td>
+                    </tr>
+                    <tr>
+                        <td>DEATHS</td>
+                        <td>{{ items.total_deaths }}</td>
+                    </tr>
+                    <tr>
+                        <td>KILL / DEATH</td>
+                        <td>{{ items.k_d }}</td>
+                    </tr>
+                    <tr>
+                        <td>KILL / ROUND</td>
+                        <td>{{ items.kills_rnd }}</td>
+                    </tr>
+                    <tr>
+                        <td>ROUNDS WITH KILLS</td>
+                        <td>{{ items.rnds_with_kills }}</td>
+                    </tr>
+                    <tr>
+                        <td>KD DIFFERENCE</td>
+                        <td>{{ items.k_d_diff }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="post">
+            <h2>OPENING STATS</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>CATEGORIES</th>
+                        <th>STATS</th>
+                    </tr>
+                    <tr>
+                        <td>TOTAL OPENING KILLS</td>
+                        <td>{{ items.open_k }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOTAL OPENING DEATHS</td>
+                        <td>{{ items.open_d }}</td>
+                    </tr>
+                    <tr>
+                        <td>OPENING KILL RATIO</td>
+                        <td>{{ items.kill_ratio }}</td>
+                    </tr>
+                    <tr>
+                        <td>OPENING KD DIFFERENCE</td>
+                        <td>{{ items.openk_opend_diff }}</td>
+                    </tr>
+                    <tr>
+                        <td>TEAM WIN % AFTER FIRST KILL</td>
+                        <td>{{ items.perc_team_win_first_k }}%</td>
+                    </tr>
+                    <tr>
+                        <td>FIRST KILL IN WON ROUNDS</td>
+                        <td>{{ items.perc_first_k_win_rnds }}%</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="post">
+            <h2>WEAPON STATS</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>WEAPON</th>
+                        <th>KILLS</th>
+                    </tr>
+                    <tr>
+                        <td>RIFLE</td>
+                        <td>{{ items.riffle_k }}</td>
+                    </tr>
+                    <tr>
+                        <td>SNIPER</td>
+                        <td>{{ items.sniper_k }}</td>
+                    </tr>
+                    <tr>
+                        <td>SMG</td>
+                        <td>{{ items.smg_k }}</td>
+                    </tr>
+                    <tr>
+                        <td>PISTOL</td>
+                        <td>{{ items.pistol_k }}</td>
+                    </tr>
+                    <tr>
+                        <td>GRENADE</td>
+                        <td>{{ items.grenade_k }}</td>
+                    </tr>
+                    <tr>
+                        <td>OTHER</td>
+                        <td>{{ items.other_k }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="post">
+            <h2>OVERVIEW</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>CATEGORIES</th>
+                        <th>STATS</th>
+                    </tr>
+                    <tr>
+                        <td>TEAM</td>
+                        <td>
+                            <a href="{% url 'team_stats' items.team_id %}" target="_blank" class="button-link">
+                                {{ items.team.upper }}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>ROUNDS PLAYED</td>
+                        <td>{{ items.rnds_played }}</td>
+                    </tr>
+                    <tr>
+                        <td>ASSIST / ROUND</td>
+                        <td>{{ items.assists_rnd }}</td>
+                    </tr>
+                    <tr>
+                        <td>DEATHS / ROUND</td>
+                        <td>{{ items.dths_rnd }}</td>
+                    </tr>
+                    <tr>
+                        <td>SAVED BY TEAMMATE / ROUND</td>
+                        <td>{{ items.sav_by_tmt_rnd }}</td>
+                    </tr>
+                    <tr>
+                        <td>SAVED TEAMMATES / ROUND</td>
+                        <td>{{ items.sav_tmts_rnd }}</td>
+                    </tr>
+                    <tr>
+                        <td>HEADSHOT %</td>
+                        <td>{{ items.perc_headshot }}%</td>
+                    </tr>
+                    <tr>
+                        <td>DAMAGE / ROUND</td>
+                        <td>{{ items.dmg_rnd }}</td>
+                    </tr>
+                    <tr>
+                        <td>GRENADE DAMAGE / ROUND</td>
+                        <td>{{ items.gnd_dmg_rnd }}</td>
+                    </tr>
+                    <tr>
+                        <td>MAPS PLAYED</td>
+                        <td>{{ items.maps_played }}</td>
+                    </tr>
+                    <tr>
+                        <td>RATING</td>
+                        <td>{{ items.rating }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="post">
+            <h2>CAREER</h2>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>YEAR</th>
+                        <th>ALL</th>
+                        <th>ONLINE</th>
+                        <th>LAN</th>
+                        <th>MAJOR</th>
+                    </tr>
+                    {% for year, career_stats in items.career.items %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ career_stats.all }}</td>
+                        <td>{{ career_stats.online }}</td>
+                        <td>{{ career_stats.lan }}</td>
+                        <td>{{ career_stats.major }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+        {% endif %}
+
+        {% if not items %}
+        <div class="post">
+            <h2 style="text-align: center;">NOT FOUND</h2>
+        </div>
+        {% endif %}
+    </div>
+    <footer>
+        {{ date }}
+    </footer>
+</body>
+</html>

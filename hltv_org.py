@@ -559,6 +559,3 @@ async def hltv_team_rating(team_id: str):
                 href = td.find('a')['href']
                 if re.findall(r"\b" + re.escape(team_id) + r"\b", href, re.IGNORECASE):
                     return float(tds[4].text)
-
-if __name__ == '__main__':
-    print(asyncio.run(hltv_team_rating('1226011')))

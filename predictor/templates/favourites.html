@@ -234,20 +234,11 @@
             color: #fff;
         }
 
-        .post .team-number-left {
-            position: absolute;
-            font-size: 50pt;
-            color: #FFFFFF;
-            top: 60px;
-            left: 240px;
-        }
-
+        .post .team-number-left,
         .post .team-number-right {
-            position: absolute;
+            left: 50%;
             font-size: 50pt;
-            color: #FFFFFF;
-            top: 60px;
-            right: 240px;
+            transform: translateX(-50%);
         }
 
         .post .bo {
@@ -257,6 +248,13 @@
             margin: -60px auto 0;
             border: 2px solid rgb(113, 0, 128);
         }
+
+        .prediction-value {
+            display: inline-block;
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -264,9 +262,9 @@
         <h1>CS:GO FAVOURITES</h1>
         <div class="button-container" style="max-width: 983px;">
             <a href="{% url 'actual_news' %}" class="button">NEWS</a>
-            <a href="{% url 'upcoming' %}" class="button">UPCOMING</a>
-            <a href="{% url 'actual_news' %}" class="button">MATCHES</a>
-            <a href="{% url 'actual_news' %}" class="button">PLAYERS</a>
+            <a href="{% url 'upcoming' %}" class="button">MATCHES</a>
+            <a href="{% url 'all_teams' %}" class="button">TEAMS</a>
+            <a href="{% url 'all_players' %}" class="button">PLAYERS</a>
             <a href="{% url 'user_fav_upcoming' %}" class="button">FAVOURITES</a>
         </div>
         <div class="user-button">
@@ -274,8 +272,8 @@
         </div>
     </header>
     <div class="button-container-news">
-        <a href="{% url 'user_fav_upcoming' %}" class="button">UPCOMING</a>
-        <a href="{% url 'user_fav_matches' %}" class="button">MATCHES</a>
+        <a href="{% url 'user_fav_upcoming' %}" class="button">MATCHES</a>
+        <a href="{% url 'user_fav_teams' %}" class="button">TEAMS</a>
         <a href="{% url 'user_fav_players' %}" class="button">PLAYERS</a>
     </div>
     <div class="container">
@@ -292,10 +290,9 @@
                 }, 10000);
             </script>
             {% endfor %}
+
         {% for item in items %}
         <div class="post">
-            <span class="team-number-left" style="color: {{ item.team_0.color }};">{{ item.team_0.score }}</span>
-            <span class="team-number-right" style="color: {{ item.team_1.color }};">{{ item.team_1.score }}</span>
             {% if not item.team_0.flag and not item.team_1.flag %}
             <img src="{% static '/flag.png' %}" alt="" class="team-logo team-left">
             <img src="{% static '/flag.png' %}" alt="" class="team-logo team-right">
@@ -325,27 +322,59 @@
             </p>
             {% if item.team_0.source and item.team_1.source %}
             <h2>
+                <span class="team-number-left" style="color: {{ item.team_0.color }};">{{ item.team_0.score }}</span>
+                {% if item.team_0.pred %}
+                <span class="prediction-value">{{ item.team_0.pred|floatformat }}%</span>
+                {% endif %}
                 <img src="{{ item.team_0.source }}" alt="">
                 <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
                 <img src="{{ item.team_1.source }}" alt="">
+                {% if item.team_1.pred %}
+                <span class="prediction-value">{{ item.team_1.pred|floatformat }}%</span>
+                {% endif %}
+                <span class="team-number-right" style="color: {{ item.team_1.color }};">{{ item.team_1.score }}</span>
             </h2>
             {% elif not item.team_0.source and not item.team_1.source %}
             <h2>
+                <span class="team-number-left" style="color: {{ item.team_0.color }};">{{ item.team_0.score }}</span>
+                {% if item.team_0.pred %}
+                <span class="prediction-value">{{ item.team_0.pred|floatformat }}%</span>
+                {% endif %}
                 <img src="{% static '/not_found.png' %}" alt="">
                 <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
                 <img src="{% static '/not_found.png' %}" alt="">
+                {% if item.team_1.pred %}
+                <span class="prediction-value">{{ item.team_1.pred|floatformat }}%</span>
+                {% endif %}
+                <span class="team-number-right" style="color: {{ item.team_1.color }};">{{ item.team_1.score }}</span>
             </h2>
             {% elif not item.team_0.source %}
             <h2>
+                <span class="team-number-left" style="color: {{ item.team_0.color }};">{{ item.team_0.score }}</span>
+                {% if item.team_0.pred %}
+                <span class="prediction-value">{{ item.team_0.pred|floatformat }}%</span>
+                {% endif %}
                 <img src="{% static '/not_found.png' %}" alt="">
                 <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
                 <img src="{{ item.team_1.source }}" alt="">
+                {% if item.team_1.pred %}
+                <span class="prediction-value">{{ item.team_1.pred|floatformat }}%</span>
+                {% endif %}
+                <span class="team-number-right" style="color: {{ item.team_1.color }};">{{ item.team_1.score }}</span>
             </h2>
             {% elif not item.team_1.source %}
             <h2>
+                <span class="team-number-left" style="color: {{ item.team_0.color }};">{{ item.team_0.score }}</span>
+                {% if item.team_0.pred %}
+                <span class="prediction-value">{{ item.team_0.pred|floatformat }}%</span>
+                {% endif %}
                 <img src="{{ item.team_0.source }}" alt="">
                 <img src="{% static '/versus.png' %}" alt="" style="width: 50px; height: 50px;">
                 <img src="{% static '/not_found.png' %}" alt="">
+                {% if item.team_1.pred %}
+                <span class="prediction-value">{{ item.team_1.pred|floatformat }}%</span>
+                {% endif %}
+                <span class="team-number-right" style="color: {{ item.team_1.color }};">{{ item.team_1.score }}</span>
             </h2>
             {% endif %}
             <a href="{% url 'upcoming_del' item.match_id %}" class="button star" style="background-color: 333333; color: white;">&#10060;</a>

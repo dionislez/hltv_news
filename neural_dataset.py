@@ -123,8 +123,12 @@ async def player_stats(data: dict):
 async def increase_dataset(data: dict):
     selected_tables = ['player_id', 'nickname', 'team_player', 'team_opponent', 'team_rating',
                        'opponent_rating', 'adr', 'kast', 'rating', 'match_result']
-    row = {key: data[key] for key in selected_tables}
-    with open('./forecasts/test_data.csv', 'a', newline='') as csvfile:
+    try:
+        row = {key: data[key] for key in selected_tables}
+    except KeyError as err:
+        logger.error(err)
+        return
+    with open('./forecasts/test_data.csv', 'a', encoding="utf-8", newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=selected_tables)
         writer.writerow(row)
 

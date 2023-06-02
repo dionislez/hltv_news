@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CS:GO FAVOURITES</title>
+    <style>
+        body {
+            background-color: #1E1E1E;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+        }
+
+        .button-container {
+            display: flex;
+            margin: 0 auto;
+            padding: 20px 0px 0px;
+        }
+
+        .button-container .button {
+            border-radius: 8%;
+            flex-grow: 1;
+            margin: 0 20px;
+            background-color: #282828;
+            border: 3px solid rgb(113, 0, 128);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            float: right;
+            transition: transform 0.2s;
+        }
+
+        .button-container .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(113, 0, 128);
+        }
+
+        h1 {
+            font: 44px sans-serif;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .post {
+            background-color: #282828;
+            border-radius: 5px;
+            font: 12pt monospace;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            overflow: hidden;
+            width: 30%;
+            margin: 0 10px;
+            margin-bottom: 20px;
+        }
+
+        .post .button {
+            transition: transform 0.2s;
+            background-color: #282828;
+            border: 2px solid rgb(113, 0, 128);
+            font: 12pt monospace;
+            text-decoration: none;
+            color: #FFFFFF;
+            padding: 4px 10px;
+            float: right;
+        }
+
+        .post .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(113, 0, 128);
+        }
+
+        footer {
+            background-color: #333333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        .user-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .user-button .button {
+            background-color: #333333;
+            border: 3px solid rgb(255, 0, 0);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            transition: transform 0.2s;
+        }
+
+        .user-button .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(255, 0, 0);
+        }
+
+        .post .button.star {
+            font-size: 10.5pt;
+            padding: 4px 10px;
+        }
+
+        .post .content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .post .content img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .post .button-container .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alert {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            background-color: #111;
+            color: #fff;
+        }
+
+        .button-container-news {
+            display: flex;
+            padding: 20px 0px 0px;
+            justify-content: center;
+        }
+
+        .button-container-news .button {
+            width: 100px;
+            height: 20px;
+            text-align: center;
+            border-radius: 8%;
+            flex-grow: 1;
+            margin: 0 10px;
+            background-color: #282828;
+            border: 3px solid rgb(0, 128, 66);
+            color: #FFFFFF;
+            font: 13pt monospace;
+            text-decoration: none;
+            padding: 4px 10px;
+            transition: transform 0.2s;
+        }
+
+        .button-container-news .button:hover {
+            transform: translateY(-2px);
+            background-color: rgb(0, 128, 66);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CS:GO FAVOURITES</h1>
+        <div class="button-container" style="max-width: 983px;">
+            <a href="{% url 'actual_news' %}" class="button">NEWS</a>
+            <a href="{% url 'upcoming' %}" class="button">MATCHES</a>
+            <a href="{% url 'all_teams' %}" class="button">TEAMS</a>
+            <a href="{% url 'all_players' %}" class="button">PLAYERS</a>
+            <a href="{% url 'user_fav_upcoming' %}" class="button">FAVOURITES</a>
+        </div>
+        <div class="user-button">
+            <a href="{% url 'home' %}" class="button">ACCOUNT</a>
+        </div>
+    </header>
+
+    <div class="button-container-news">
+        <a href="{% url 'user_fav_upcoming' %}" class="button">MATCHES</a>
+        <a href="{% url 'user_fav_teams' %}" class="button">TEAMS</a>
+        <a href="{% url 'user_fav_players' %}" class="button">PLAYERS</a>
+    </div>
+
+    <div class="container">
+        {% for message in messages %}
+        <div class="alert">
+            <strong>{{ message }}</strong>
+        </div>
+        <script>
+            setTimeout(function() {
+                document.querySelector('.alert').style.opacity = '0';
+                setTimeout(function() {
+                    document.querySelector('.alert').style.display = 'none';
+                }, 1000);
+            }, 10000);
+        </script>
+        {% endfor %}
+
+        {% for item in items %}
+        <div class="post">
+            <div>
+                <div class="content">
+                    <img src="{% static '/ct_logo.png' %}" alt="">
+                    <span style="border: 2px solid rgb(113, 0, 128);">
+                        {{ item.nickname.upper }}
+                    </span>
+                    <img src="{% static '/tr_logo.png' %}" alt="">
+                </div>
+                <div class="button-container">
+                    <a href="{% url 'player_stats' item.player_id %}" target="_blank" class="button" style="margin: 0 10px;">STATS</a>
+                    <a href="{% url 'players_del' item.player_id %}" class="button star" style="background-color: 333333; color: white;">&#10060;</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not items %}
+        <div class="post">
+            <h2 style="text-align: center;">NOT FOUND</h2>
+        </div>
+        {% endif %}
+    </div>
+    <footer>
+        {{ date }}
+    </footer>
+</body>
+</html>

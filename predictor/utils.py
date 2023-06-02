@@ -1,3 +1,4 @@
+import re
 from pprint import pprint
 from typing import Optional
 
@@ -39,6 +40,10 @@ def get_upcoming_events():
             events[f'team_{index}'] = events['teams'][event]
             if events[f'team_{index}']['source'] == '/img/static/team/placeholder.svg':
                 events[f'team_{index}']['source'] = ''
+        
+        if events.get('prediction') and events['prediction']:
+            for id_ in events['teams']:
+                events['teams'][id_]['pred'] = events['prediction'][events['teams'][id_]['team']]
     return all_events
 
 def get_live_events():
@@ -51,6 +56,10 @@ def get_live_events():
             events[f'team_{index}'] = events['teams'][event]
             if events[f'team_{index}']['source'] == '/img/static/team/placeholder.svg':
                 events[f'team_{index}']['source'] = ''
+        
+        if events.get('prediction') and events['prediction']:
+            for id_ in events['teams']:
+                events['teams'][id_]['pred'] = events['prediction'][events['teams'][id_]['team']]
     return all_events
 
 def get_played_events():
@@ -61,11 +70,17 @@ def get_played_events():
         events['start_time'] = events['start_time'][:-3]
         if events['teams']:
             for index, item in enumerate(events['teams']):
-                if events['teams'][item]['team'] == events['teams_current'][str(index)]:
+                team_ = events['teams'][item]['team']
+                current_ = events['teams_current'][str(index)]
+                team_name = events['teams_current'][str(index)]
+                if isinstance(current_, dict):
+                    team_name = events['teams_current'][str(index)]['team']
+                    current_ = current_['team']
+                if team_.find(current_) != -1 or current_.find(team_):
                     events['teams_current'][str(index)] = {
                         'source': events['teams'][item]['source'],
                         'flag': events['teams'][item]['flag'],
-                        'team': events['teams_current'][str(index)]
+                        'team': team_name
                     }
         for item in events['teams_current']:
             if events['teams_current'][item]['source'] == '/img/static/team/placeholder.svg':
@@ -74,9 +89,16 @@ def get_played_events():
     return all_events
 
 def event_checker_all_played(events: dict):
-    if not events['total_score'].get('score'):
-        events['total_score']['score'] = [0, 0]
-        events['total_score']['score'][events['total_score']['winner']] = 1
+    if events.get('prediction') and events['prediction']:
+            for id_ in events['teams']:
+                events['teams'][id_]['pred'] = events['prediction'][events['teams'][id_]['team']]
+
+    if events.get('total_score'):
+        if (not events['total_score'].get('score') or
+            events['total_score']['score'][0] == events['total_score']['score'][1]
+        ):
+            events['total_score']['score'] = [0, 0]
+            events['total_score']['score'][events['total_score']['winner']] = 1
 
     if not events['teams']:
         for index, score in enumerate(events['total_score']['score']):
@@ -89,6 +111,9 @@ def event_checker_all_played(events: dict):
         events[f'team_{index}'] = events['teams'][event]
         if events[f'team_{index}']['source'] == '/img/static/team/placeholder.svg':
             events[f'team_{index}']['source'] = ''
+
+        if not events.get('total_score'):
+            continue
 
         if not events['total_score'].get('score'):
             events[f'team_{index}'] = {'score': 0, 'color': 'red'}
@@ -103,7 +128,7 @@ def event_checker_all_played(events: dict):
         else:
             events[f'team_{index}']['color'] = 'red'
 
-def get_user_favourites(username: str, email: str, category: str):
+def check_favourites(username: str, email: str, category: str):
     connect_ = connect('django_data', 'auth_user')
     favourites = connect_.find_one(
         {'username': username, 'email': email},
@@ -111,12 +136,80 @@ def get_user_favourites(username: str, email: str, category: str):
     )
     if not favourites or not favourites['favourites'].get(category) or not favourites['favourites'][category]:
         return
+    return favourites
+
+def get_user_favourites_players(username: str, email: str, category: str):
+    favourites = check_favourites(username, email, category)
+    if not favourites:
+        return
+
+    favourites_str = list(map(str, favourites['favourites'][category]))
+    players = list(connect('parsed_data', 'all_players').find(
+        {'player_id': {'$in': favourites_str}}, {'_id': 0}
+    ))
+
+    found_ids = []
+    connect_ = connect('parsed_data', 'all_teams')
+    for player in players:
+        nickname = connect_.find_one(
+            {f'teammates.{player["player_id"]}': {'$ne': None}}
+        )['teammates'][player["player_id"]]['nikname']
+        player['nickname'] = nickname
+        found_ids.append(int(player["player_id"]))
+
+    not_found_ids = set(favourites['favourites'][category]) - set(found_ids)
+    if not_found_ids:
+        for id_ in not_found_ids:
+            favourites['favourites'][category].remove(id_)
+        connect('django_data', 'auth_user').find_one_and_update(
+            {'username': username, 'email': email},
+            {'$set': favourites},
+            upsert=True,
+        )
+        logger.info('Not found and deleted '
+                    f'{len(not_found_ids)} - '
+                    f'{category} ({username}, {email})')
+    return players
+
+def get_user_favourites_teams(username: str, email: str, category: str):
+    favourites = check_favourites(username, email, category)
+    if not favourites:
+        return
+
+    favourites_str = list(map(str, favourites['favourites'][category]))
+    teams = list(connect('parsed_data', 'all_teams').find(
+        {'team_id': {'$in': favourites_str}}, {'_id': 0}
+    ))
+
+    found_ids = []
+    for team in teams:
+        found_ids.append(int(team['team_id']))
+
+    not_found_ids = set(favourites['favourites'][category]) - set(found_ids)
+    if not_found_ids:
+        for id_ in not_found_ids:
+            favourites['favourites'][category].remove(id_)
+        connect('django_data', 'auth_user').find_one_and_update(
+            {'username': username, 'email': email},
+            {'$set': favourites},
+            upsert=True,
+        )
+        logger.info('Not found and deleted '
+                    f'{len(not_found_ids)} - '
+                    f'{category} ({username}, {email})')
+    return teams
+
+def get_user_favourites_upcoming(username: str, email: str, category: str):
+    favourites = check_favourites(username, email, category)
+    if not favourites:
+        return
 
     results, found_ids = [], set()
     for collection in ['upcoming', 'live', 'all_played']:
         found = connect('parsed_data', collection).aggregate(
             [{'$match': {'match_id': {'$in': favourites['favourites'][category]}}}]
         )
+
         if collection == 'all_played':
             found = list(found)
             for event in found:
@@ -124,12 +217,17 @@ def get_user_favourites(username: str, email: str, category: str):
         results.extend(found)
         found_ids.update(match['match_id'] for match in results)
 
+    for event in results:
+        if event.get('prediction') and event['prediction']:
+            for id_ in event['teams']:
+                event['teams'][id_]['pred'] = event['prediction'][event['teams'][id_]['team']]
+
     results = sorted(results, key=lambda x: x['timestamp'])
     not_found_ids = set(favourites['favourites'][category]) - found_ids
     if not_found_ids:
         for id_ in not_found_ids:
             favourites['favourites'][category].remove(id_)
-        connect_.find_one_and_update(
+        connect('django_data', 'auth_user').find_one_and_update(
             {'username': username, 'email': email},
             {'$set': favourites},
             upsert=True,
@@ -158,7 +256,7 @@ def get_match_stats(match_id: int, collection: str):
         match_stats = connect('parsed_data', collection).find_one({'match_id': match_id}, {'_id': 0})
     if not match_stats:
         return
-    data = {'bo': match_stats['bo'], 'overview_data' : {}}
+    data = {'bo': match_stats['bo'], 'overview_data' : {}, 'match_id': match_stats['match_id']}
     for index, team in enumerate(match_stats['teams']):
         data[f'team_{index}'] = {'team_id': team,
                                  'team': match_stats['teams'][team]['team'],
@@ -221,7 +319,7 @@ def updating_favourites(username: str, email: str, category: str, match_id: int)
             {'$set': favourites},
             upsert=True,
         )
-        return True, f'Added {match_id} Match'
+        return True, f'Added {match_id}'
 
     if not favourites['favourites'].get(category):
         favourites['favourites'][category] = [match_id]
@@ -230,13 +328,13 @@ def updating_favourites(username: str, email: str, category: str, match_id: int)
             {'$set': favourites},
             upsert=True,
         )
-        return True, f'Added {match_id} Match'
+        return True, f'Added {match_id}'
     
     if match_id in favourites['favourites'][category]:
         return False, 'Already Added'
     
     if len(favourites['favourites'][category]) >= 30:
-        return False, f'Limit 30 For {category.capitalize()} Matches'
+        return False, f'Limit 30 For {category.capitalize()}'
 
     favourites['favourites'][category].insert(0, match_id)
     connect_.find_one_and_update(
@@ -244,7 +342,7 @@ def updating_favourites(username: str, email: str, category: str, match_id: int)
         {'$set': favourites},
         upsert=True,
     )
-    return True, f'Added {match_id} Match'
+    return True, f'Added {match_id}'
 
 def deleting_favourites_upcoming(username: str, email: str, category: str, match_id: int):
     connect_ = connect('django_data', 'auth_user')
@@ -266,3 +364,107 @@ def deleting_favourites_upcoming(username: str, email: str, category: str, match
         upsert=True,
     )
     return
+
+def get_all_players():
+    all_players = list(connect('parsed_data', 'all_players').find({}, {'_id': 0}))
+    connect_ = connect('parsed_data', 'all_teams')
+    for player in all_players:
+        player['nickname'] = connect_.find_one(
+            {f'teammates.{player["player_id"]}': {'$ne': None}}
+        )['teammates'][player["player_id"]]['nikname']
+    return all_players
+
+def get_all_player(player_id: int):
+    player = connect('parsed_data', 'all_players').find_one({'player_id': player_id}, {'_id': 0})
+    if not player:
+        return {}
+
+    team = connect('parsed_data', 'all_teams').find_one(
+        {f'teammates.{player["player_id"]}': {'$ne': None}}
+    )
+    player['nickname'] = team['teammates'][player["player_id"]]['nikname']
+    player['team_id'] = team['team_id']
+    player['team'] = team['team']
+    return player
+
+def get_player_query(query: str):
+    regex = re.compile(query, re.IGNORECASE)
+    pipeline = [
+        {
+            "$addFields": {
+                "teammatesArray": {"$objectToArray": "$teammates"}
+            }
+        },
+        {
+            "$match": {
+                "$or": [
+                    {"teammatesArray.k": {"$eq": query}},
+                    {"teammatesArray.v.nikname": {"$regex": regex}}
+                ]
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "teammatesArray": 1
+            }
+        }
+    ]
+    player = list(connect('parsed_data', 'all_teams').aggregate(pipeline))
+    if player:
+        id_ = player[0]['teammatesArray'][0]['k']
+        nikname = player[0]['teammatesArray'][0]['v']['nikname']
+        for info in player[0]['teammatesArray']:
+            if query == info['k']:
+                id_ = info['k']
+                nikname = info['v']['nikname']
+                break
+            if info['v']['nikname'].lower().find(query) != -1:
+                id_ = info['k']
+                nikname = info['v']['nikname']
+                break
+        all_data = connect('parsed_data', 'all_players').find_one(
+            {'player_id': id_}
+        )
+        all_data['nickname'] = nikname
+        return [all_data]
+    return []
+
+def get_teams():
+    all_teams = list(connect('parsed_data', 'all_teams').find({}, {'_id': 0}))
+    return all_teams
+
+def get_team_query(query: str):
+    regex = re.compile(query, re.IGNORECASE)
+    pipeline = [
+        {
+            "$addFields": {
+                "teammatesArray": {"$objectToArray": "$teammates"}
+            }
+        },
+        {
+            "$match": {
+                "$or": [
+                    {"team": {"$regex": regex}},
+                    {"teammatesArray.v.nikname": {"$regex": regex}}
+                ]
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "team": 1,
+                "team_id": 1
+            }
+        }
+    ]
+    team = list(connect('parsed_data', 'all_teams').aggregate(pipeline))
+    if team:
+        return [team[0]]
+    return []
+
+def get_all_team(team_id: str):
+    team = connect('parsed_data', 'all_teams').find_one({'team_id': team_id}, {'_id': 0})
+    if not team:
+        return {}
+    return team

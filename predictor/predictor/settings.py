@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'app_register',
     'app_upcoming',
     'app_favourites',
-    'app_stats'
+    'app_stats',
+    'app_players',
+    'app_teams'
 ]
 
 MIDDLEWARE = [

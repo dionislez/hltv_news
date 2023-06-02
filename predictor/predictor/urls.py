@@ -1,4 +1,3 @@
-from app_news.views import news_page_actual
 from django.contrib import admin
 from django.urls import include, path
 
@@ -10,4 +9,6 @@ urlpatterns = [
     path('', include('app_news.urls')),
     path('', include('app_favourites.urls')),
     path('', include('app_stats.urls')),
+    path('', include('app_players.urls')),
+    path('', include('app_teams.urls'))
 ]
