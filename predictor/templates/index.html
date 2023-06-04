@@ -77,6 +77,12 @@
             display: flex;
             align-items: center;
         }
+
+        .tg-image {
+            bottom: 10px;
+            right: 10px;
+            position: fixed;
+        }
     </style>
 </head>
 <body>
@@ -105,6 +111,9 @@
         </a>
     </button>
     <button type="submit"><a href="/signout">Sign Out</a></button>
+    <a href="https://t.me/esport_oracle_bot" target="_blank" class="tg-image">
+        <img src="{% static '/tg.png' %}" alt="" style="width: 250px; height: 180px;">
+    </a>
     {% else %}
     <button type="submit"><a href="/signup">Sign Up</a></button>
     <button type="submit"><a href="/signin">Sign In</a></button>

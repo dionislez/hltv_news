@@ -76,7 +76,7 @@ def get_played_events():
                 if isinstance(current_, dict):
                     team_name = events['teams_current'][str(index)]['team']
                     current_ = current_['team']
-                if team_.find(current_) != -1 or current_.find(team_):
+                if team_.lower().find(current_.lower()) != -1 or current_.lower().find(team_.lower()) != -1:
                     events['teams_current'][str(index)] = {
                         'source': events['teams'][item]['source'],
                         'flag': events['teams'][item]['flag'],
