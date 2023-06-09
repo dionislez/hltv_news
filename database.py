@@ -245,3 +245,12 @@ async def update_all_matches(prediction: dict, match_id: int, collection: str):
             upsert=True,
             session=session
         )
+
+async def check_win_perc():
+    async with await client.start_session() as session:
+        played = await db['all_played'].find(
+            {'prediction': {'$ne': None}},
+            {'_id': 0},
+            session=session
+        ).to_list(length=None)
+    return played

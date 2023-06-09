@@ -1,10 +1,5 @@
 import asyncio
-from pprint import pprint
-from database import hltv_get_upcoming
-
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from database import hltv_get_upcoming, check_win_perc
 
 
 async def main():
@@ -57,21 +52,32 @@ async def data_check(data: dict):
         result[team]['%_wins'] = (sum_ / len(data[team]['scores'])) * 100
     print(result)
 
-async def model_check(data: dict):
-    X, y = [], []
-    for team in data:
-        for player in data[team]['players']:
-            player_features = data[team]['players'][player]
-            scores = data[team]['scores']
-            player_labels = [1 if score[0] > score[1] else 0 for score in scores]
-            X.extend([player_features] * len(scores))
-            y.extend(player_labels)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = LogisticRegression()
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    accuracy = accuracy_score(y_test, predictions)
-    print("Accuracy:", accuracy)
+async def win_perc():
+    played = await check_win_perc()
+    matches, wins, losses, draws = 0, 0, 0, 0
+    for match in played:
+        if not match['prediction'] or not 'total_score' in match or not match['total_score']:
+            continue
+
+        team_names = []
+        for _, team in match['teams'].items():
+            team_names.append(team['team'])
+
+        winner = team_names[match['total_score']['winner']]
+        if match['prediction'][winner] > 50:
+            wins += 1
+        elif match['prediction'][winner] == 50:
+            draws += 1
+        else:
+            losses += 1
+        matches += 1
+
+    win_percentage = (wins / (wins + losses + draws)) * 100
+    print(f'Total prognosed matches: {matches}\n'
+          f'Total wins: {wins}\n'
+          f'Total losses: {losses}\n'
+          f'Total draws: {draws}\n'
+          f'Accuracy: {round(win_percentage)}%')
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(win_perc())

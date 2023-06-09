@@ -482,6 +482,10 @@ async def hltv_match_score_total(match_link: str):
             data[str(index + 1)]['pick'] = 3
             continue
         team_left = map_result.find(class_='results-left')
+        if team_left.find(class_='results-team-score').text.strip() == '-':
+            logger.info('Match still in progress')
+            return
+
         score = int(team_left.find(class_='results-team-score').text.strip())
         data[str(index + 1)]['team_0'] = {'score': score}
         team_right = map_result.find(class_='results-right')
